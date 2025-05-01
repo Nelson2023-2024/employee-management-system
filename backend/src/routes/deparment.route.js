@@ -32,7 +32,6 @@ router.post("/create-department", async (req, res) => {
     if (departmentExist)
       return res.status(400).json({ message: "Department already exists" });
 
-
     const department = new Department({
       name,
       description,
@@ -59,6 +58,24 @@ router.delete("/:id", async (req, res) => {
 
     if (!department) {
       return res.status(404).json({ message: "Department not found" });
+    }
+
+    const promises = [
+      // Update all users in this department to set their department to null
+      User.updateMany({ department: id }, { $set: { department: null } }),
+      // Delete the department
+      Department.findByIdAndDelete(id),
+    ];
+
+    // Execute both promises concurrently
+    const [usersUpdated, departmentDeleted] = await Promise.all(promises);
+
+    if (!departmentDeleted) {
+      // This condition might be redundant since we already checked if the department exists initially
+      // However, it adds an extra layer of safety in case of unexpected issues during the promise execution.
+      return res
+        .status(404)
+        .json({ message: "Department not found (after attempting deletion)" });
     }
 
     res.status(200).json({ message: "Department deleted successfully" });
