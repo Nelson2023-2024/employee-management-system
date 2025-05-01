@@ -1,10 +1,13 @@
 import { Router } from "express";
 import { Department } from "../models/Department.model.js";
+import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
 
-router.get("/", async (req,res) => {
+router.get("/", protectRoute, adminRoute, async (req,res) => {
   try {
+    console.log("Req.user:",req.user);
+
     const departments = await Department.find({});
     res.status(200).json({ departments });
   } catch (error) {

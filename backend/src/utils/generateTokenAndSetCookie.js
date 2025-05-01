@@ -8,9 +8,10 @@ export async function generateToken(userId, res) {
   res.cookie("token", token, {
     httpOnly: true, //XXS attacks
     sameSite: "strict", //CSRF
-    secure: process.env.NODE_ENV !== "development",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+
+  console.log("Token:", token);
 
   return token;
 }
