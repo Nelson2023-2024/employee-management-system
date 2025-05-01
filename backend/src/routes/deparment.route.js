@@ -4,9 +4,9 @@ import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
 
-router.get("/", protectRoute, adminRoute, async (req,res) => {
+router.get("/", protectRoute, adminRoute, async (req, res) => {
   try {
-    console.log("Req.user:",req.user);
+    console.log("Req.user:", req.user);
 
     const departments = await Department.find({});
     res.status(200).json({ departments });
@@ -15,9 +15,11 @@ router.get("/", protectRoute, adminRoute, async (req,res) => {
       "An error occurred in the get-all-departments route:",
       error.message
     );
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
-})
+});
 
 router.post("/create-department", async (req, res) => {
   try {
@@ -25,6 +27,11 @@ router.post("/create-department", async (req, res) => {
 
     if (!name || !description)
       return res.status(400).json({ message: "All fields are required" });
+
+    const departmentExist = await Department.findOne({ name });
+    if (departmentExist)
+      return res.status(400).json({ message: "Department already exists" });
+
 
     const department = new Department({
       name,
