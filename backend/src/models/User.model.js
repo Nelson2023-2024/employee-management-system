@@ -23,7 +23,8 @@ const userSchema = new mongoose.Schema(
     employeeStatus:{
         type: String,
         required: true,
-        enum: ["Active", "On Leave", "Terminated"]
+        enum: ["Active", "On Leave", "Terminated"],
+        default:"Active"
     },
     phoneNumber:{
     type: String,

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Department } from "../models/Department.model";
+import { Department } from "../models/Department.model.js";
 
 const router = Router();
 
