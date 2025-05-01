@@ -30,6 +30,15 @@ router.post("/create-department", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   try {
+    const { id } = req.params;
+
+    const department = await Department.findByIdAndDelete(id);
+
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    res.status(200).json({ message: "Department deleted successfully" });
   } catch (error) {
     console.log(
       "An Error occured in the delete department route:",
