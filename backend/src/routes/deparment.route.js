@@ -21,7 +21,7 @@ router.get("/", protectRoute, adminRoute, async (req, res) => {
   }
 });
 
-router.post("/create-department", async (req, res) => {
+router.post("/create-department", protectRoute, adminRoute, async (req, res) => {
   try {
     const { name, description } = req.body;
 
@@ -50,7 +50,7 @@ router.post("/create-department", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
   try {
     const { id } = req.params;
 

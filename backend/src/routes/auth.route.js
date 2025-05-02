@@ -61,7 +61,7 @@ router.post(
   }
 );
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findByIdAndDelete(id);
