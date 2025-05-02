@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const leaveTypeSchema = new mongoose.Schema(
   {
     name: {
@@ -9,15 +10,15 @@ const leaveTypeSchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    deductsFromBalance: {
-      type: Boolean,
-      default: true,
-    }, // Does taking this leave reduce the balance?
+    maxDays: { // Added maxDays
+      type: Number,
+      required: true,
+    },
+    
     requiresApproval: {
       type: Boolean,
       default: true,
     },
-    // Add other relevant fields: default entitlement, accrual rules etc.
   },
   { timestamps: true }
 );
