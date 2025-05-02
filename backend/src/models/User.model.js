@@ -20,26 +20,32 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    employeeStatus:{
-        type: String,
-        required: true,
-        enum: ["Active", "On Leave", "Terminated"],
-        default:"Active"
+    employeeStatus: {
+      type: String,
+      required: true,
+      enum: ["Active", "On Leave", "Terminated"],
+      default: "Active",
     },
-    phoneNumber:{
-    type: String,
+    phoneNumber: {
+      type: String,
       required: true,
     },
-    role:{
-        type: String,
-        enum: ["employee", "admin"],
-        default: "employee"
+    role: {
+      type: String,
+      enum: ["employee", "admin"],
+      default: "employee",
     },
-    department:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Department',
-        required: true,
-    }
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: true,
+    },
+    leaveType: {
+      // Added leaveType field
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "LeaveType",
+      default: null, //  Important:  Initialize to null
+    },
   },
   { timestamps: true }
 );
