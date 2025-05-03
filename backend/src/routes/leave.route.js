@@ -6,71 +6,80 @@ import { protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
 
-router.use(protectRoute)
+router.use(protectRoute);
 
 router.post("/:leaveTypeId", async (req, res) => {
   try {
     const { leaveTypeId } = req.params;
     const employeeId = req.user._id;
 
-    //get employee and valid status
-    const employee = await User.findById(employeeId);
+    // Check for existing leave request
+    const existingRequest = await LeaveRequest.findOne({
+      employee: employeeId,
+      leaveType: leaveTypeId,
+      status: { $in: ["Pending", "Approved"] }
+    });
 
-    if (!employee)
-      return res.status(404).json({ message: "Employee not Found" });
-
-    //if the employee is found check if they are active
-    if (employee.employeeStatus !== "Active")
-      return res.status(403).json({ message: "Not eligible for leave" });
-
-    //get leave type details
-    const leaveType = await LeaveType.findById(leaveTypeId);
-    if (!leaveType) {
-      return res.status(404).json({ message: "Leave type not found" });
+    // If exists - remove it (toggle off)
+    if (existingRequest) {
+      await LeaveRequest.findByIdAndDelete(existingRequest._id);
+      return res.status(200).json({
+        message: "Leave request removed",
+        action: "removed",
+        requestId: existingRequest._id
+      });
     }
 
-    //use maxDays from leave type
-    const days = leaveType.maxDays;
-    if (days < 1)
-      return res.status(400).json({
-        message: "Invalid leave configuration < 1 - contact administrator",
-      });
+    // If doesn't exist - create new (toggle on)
+    const employee = await User.findById(employeeId);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    if (employee.employeeStatus !== "Active") {
+      return res.status(403).json({ message: "Not eligible for leave" });
+    }
 
-    //calculate dates
+    const leaveType = await LeaveType.findById(leaveTypeId);
+    if (!leaveType) return res.status(404).json({ message: "Leave type not found" });
+    if (leaveType.maxDays < 1) {
+      return res.status(400).json({ message: "Invalid leave configuration" });
+    }
+
     const startDate = new Date();
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + (days - 1));
+    endDate.setDate(startDate.getDate() + (leaveType.maxDays - 1));
 
-    let newRequest = await LeaveRequest.create({
+    const newRequest = await LeaveRequest.create({
       employee: employeeId,
       leaveType: leaveTypeId,
       startDate,
       endDate,
-      numberOfDays: days,
+      numberOfDays: leaveType.maxDays,
       status: leaveType.requiresApproval ? "Pending" : "Approved",
       approvedDate: leaveType.requiresApproval ? null : new Date(),
     });
 
-    // For auto-approved leaves, consider adding system approval
+    // Handle auto-approval
     if (!leaveType.requiresApproval) {
-      // Optional: Set to a system user if needed
       const systemUser = await User.findOne({ email: "system@company.com" });
-      newRequest.approver = systemUser?._id;
-      await newRequest.save();
+      if (systemUser) {
+        newRequest.approver = systemUser._id;
+        await newRequest.save();
+      }
     }
 
     res.status(201).json({
-      message: leaveType.requiresApproval
-        ? "Leave request submitted for approval"
+      message: leaveType.requiresApproval 
+        ? "Leave request submitted for approval" 
         : "Leave automatically approved",
-      request: newRequest,
+      action: "created",
+      request: newRequest
     });
+
   } catch (error) {
-    console.error("Leave application error:", error.message);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
+    console.error("Leave error:", error.message);
+    res.status(500).json({ 
+      message: "Leave operation failed", 
+      error: error.message 
     });
   }
 });
