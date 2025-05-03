@@ -84,4 +84,25 @@ router.post("/:leaveTypeId", async (req, res) => {
   }
 });
 
+// Add to existing leaveRoutes.js
+router.get("/", async (req, res) => {
+    try {
+      const leaves = await LeaveRequest.find({ employee: req.user._id })
+        .populate("leaveType", "name description maxDays")
+        .populate("approver", "fullName email")
+        .sort({ createdAt: -1 });
+  
+      res.status(200).json({
+        message: "Leave requests retrieved successfully",
+        count: leaves.length,
+        leaves,
+      });
+    } catch (error) {
+      console.error("Get leaves error:", error.message);
+      res.status(500).json({
+        message: "Failed to retrieve leave requests",
+        error: error.message,
+      });
+    }
+  });
 export { router as leaveRoutes };
