@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 const leaveRequestSchema = new mongoose.Schema(
     {
       employee: {
@@ -34,7 +35,7 @@ const leaveRequestSchema = new mongoose.Schema(
       approver: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
+        default: null
       },
       comments: [
         {

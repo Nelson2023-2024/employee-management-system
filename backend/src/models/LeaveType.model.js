@@ -13,6 +13,7 @@ const leaveTypeSchema = new mongoose.Schema(
     maxDays: { // Added maxDays
       type: Number,
       required: true,
+      min:1
     },
     
     requiresApproval: {
