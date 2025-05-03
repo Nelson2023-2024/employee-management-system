@@ -38,9 +38,7 @@ const leaveRequestSchema = new mongoose.Schema(
       approvedDate: {
         type: Date,
       },
-      rejectionReason: {
-        type: String,
-      },
+     
     },
     { timestamps: true }
   ); // timestamps adds createdAt, updatedAt

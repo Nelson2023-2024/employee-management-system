@@ -2,6 +2,7 @@ import { Router } from "express";
 import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 import { LeaveType } from "../models/LeaveType.model.js";
 import { User } from "../models/User.model.js";
+import { LeaveRequest } from "../models/LeaveRequest.model.js";
 
 const router = Router();
 
@@ -67,6 +68,54 @@ router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+// Add this route to adminLeaveRoutes.js
+router.patch("/toggle-leave/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user._id;
+
+    // Find the leave request and determine new status
+    const leaveRequest = await LeaveRequest.findOne({
+      _id: id,
+      status: { $in: ["Approved", "Pending", "Rejected"] }
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ message: "Leave request not found" });
+    }
+
+    // Toggle logic
+    const newStatus = leaveRequest.status === "Approved" 
+      ? "Rejected" 
+      : "Approved";
+
+    const update = {
+      status: newStatus,
+      approver: adminId,
+      approvedDate: newStatus === "Approved" ? new Date() : null
+    };
+
+    // Atomic update
+    const updatedRequest = await LeaveRequest.findByIdAndUpdate(
+      id,
+      update,
+      { new: true }
+    ).populate("employee", "fullName email");
+
+    res.status(200).json({
+      message: `Leave ${newStatus.toLowerCase()} successfully`,
+      leave: updatedRequest
+    });
+
+  } catch (error) {
+    console.error("Toggle error:", error.message);
+    res.status(500).json({
+      message: "Failed to toggle leave status",
+      error: error.message
+    });
   }
 });
 
