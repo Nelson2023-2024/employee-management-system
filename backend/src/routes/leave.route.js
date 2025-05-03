@@ -2,10 +2,13 @@ import { Router } from "express";
 import { LeaveType } from "../models/LeaveType.model.js";
 import { User } from "../models/User.model.js";
 import { LeaveRequest } from "../models/LeaveRequest.model.js";
+import { protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
 
-router.post("/:leaveTypeId", protectRoute, async (req, res) => {
+router.use(protectRoute)
+
+router.post("/:leaveTypeId", async (req, res) => {
   try {
     const { leaveTypeId } = req.params;
     const employeeId = req.user._id;

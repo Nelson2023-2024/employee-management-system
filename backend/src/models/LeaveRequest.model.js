@@ -23,10 +23,7 @@ const leaveRequestSchema = new mongoose.Schema(
         type: Number,
         required: true,
       }, // Calculate this upon submission, and should be <= LeaveType.maxDays
-      reason: {
-        type: String,
-        required: true,
-      },
+      
       status: {
         type: String,
         enum: ["Pending", "Approved", "Rejected", "Cancelled"],
@@ -37,19 +34,7 @@ const leaveRequestSchema = new mongoose.Schema(
         ref: "User",
         default: null
       },
-      comments: [
-        {
-          user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-          },
-          comment: String,
-          date: {
-            type: Date,
-            default: Date.now,
-          },
-        },
-      ],
+      
       approvedDate: {
         type: Date,
       },
