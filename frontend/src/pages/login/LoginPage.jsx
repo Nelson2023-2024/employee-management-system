@@ -10,54 +10,75 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTheme } from "../../components/theme-provider";
+import { Moon, Sun } from "lucide-react"; // Import icons for theme toggle
 
 const LoginPage = () => {
+  const { theme, setTheme } = useTheme();
+  
+  const toggleTheme = () => {
+    setTheme(theme === "light" ? "dark" : "light");
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
+      {/* Theme toggle button positioned at the top right */}
+      <div className="absolute top-4 right-4">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
+
+      <Card className="w-full max-w-md border shadow-sm">
         <form>
           <CardHeader className="pb-4 text-center">
-            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardTitle className="text-2xl font-semibold">Login</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div>
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="you@example.com"
-                className="mt-1"
                 required
               />
             </div>
 
-            <div>
+            <div className="space-y-1">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 placeholder="••••••••"
-                className="mt-1"
                 required
               />
             </div>
 
-            {/* >>> Add your warning description here <<< */}
-            <CardDescription className="text-xs text-gray-600">
-              ⚠️ Never share your password with anyone. We will never ask you
-              for it.
+            <CardDescription className="text-xs text-muted-foreground flex items-center space-x-1">
+              <span>⚠️</span>
+              <span>Never share your password with anyone. We will never ask you for it.</span>
             </CardDescription>
           </CardContent>
 
-          <CardFooter className="pt-4">
+          <CardFooter className="pt-2">
             <Button type="submit" className="w-full">
-              Submit
+              Sign In
             </Button>
           </CardFooter>
         </form>
