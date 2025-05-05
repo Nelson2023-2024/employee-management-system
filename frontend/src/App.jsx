@@ -5,20 +5,16 @@ import { Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home/HomePage";
 import LoginPage from "./pages/login/LoginPage";
 import Sidebar from "./components/sidebar/SideBar";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
-  const [count, setCount] = useState(0);
-  // You can use this state to track sidebar width if needed
-  const [sidebarWidth, setSidebarWidth] = useState(240); // Default width in pixels
 
+  const {data} = useAuth()
+  console.log("data:", data);
   return (
     <div className="flex h-screen w-full">
-      {/* Sidebar - with fixed width class */}
-      <div className="">
-      
-        <Sidebar/>
-      </div>
-      
+      <Sidebar />
+
       {/* Main Content - starts after sidebar */}
       <div className="flex-1 ">
         <Routes>
