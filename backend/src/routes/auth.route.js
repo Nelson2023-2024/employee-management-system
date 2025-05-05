@@ -10,7 +10,10 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate([
+      { path: "department", select: "name description" },
+      { path: "leaveType" }, // or .populate("leaveType") if you want all its fields
+    ]);
 
     if (!user) return res.status(404).json({ message: "Email not found" });
 
@@ -29,8 +32,11 @@ router.post("/login", async (req, res) => {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
+      phone: user.phoneNumber,
       profilePic: user.profilePic,
-      token: token,
+      department: user.department,
+      employeeStatus: user.employeeStatus,
+      leaveType: user.leaveType,
       role: user.role,
     });
   } catch (error) {

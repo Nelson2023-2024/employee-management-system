@@ -6,6 +6,7 @@ import HomePage from "./pages/home/HomePage";
 import LoginPage from "./pages/login/LoginPage";
 import Sidebar from "./components/sidebar/SideBar";
 import { useAuth } from "./hooks/useAuth";
+import { Toaster, } from "react-hot-toast";
 
 function App() {
 
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
         </Routes>
+        <Toaster/>
       </div>
     </div>
   );

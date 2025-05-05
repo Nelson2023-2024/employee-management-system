@@ -13,8 +13,11 @@ configDotenv()
 const PORT = process.env.PORT || 5005
 
 const app = express()
-app.use(cors())
-
+app.use(cors({
+    origin: "http://localhost:5173",  // your Vite dev server
+    credentials: true,                // allow cookies/auth headers
+    methods: ["GET","POST","OPTIONS", "PUT","PATCH","DELETE"]
+  })); 
 app.use(cookieParser())
 
 
