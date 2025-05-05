@@ -23,8 +23,10 @@ export function useLogout() {
       return data;
     },
     onSuccess: () => {
-      // 1) clear cached user
-      queryClient.invalidateQueries(["authUser"]);
+       // Immediately set authUser to null
+       queryClient.setQueryData(["authUser"], null);
+       // Optionally invalidate the authUser query to refetch if necessary
+       queryClient.invalidateQueries(["authUser"]);
       // 2) show a toast
       toast.success("Logged out successfully");
     },
