@@ -25,6 +25,7 @@ const Sidebar = () => {
     mutationFn: async () => {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -133,7 +134,7 @@ const Sidebar = () => {
           <Button
             variant="outline"
             size="icon"
-            className="w-full md:w-auto justify-center md:justify-start group  transition-all duration-300"
+            className="w-full md:w-auto justify-center md:justify-start group  transition-all duration-300 cursor-pointer"
             onClick={handleLogout}
           >
             <div className="relative z-10  flex items-center gap-2 ">

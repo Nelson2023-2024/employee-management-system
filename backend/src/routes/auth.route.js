@@ -2,6 +2,7 @@ import { Router } from "express";
 import { User } from "../models/User.model.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utils/generateTokenAndSetCookie.js";
+import { protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
 
@@ -42,7 +43,7 @@ router.post("/login", async (req, res) => {
 
 router.post("/logout", async (req, res) => {
   try {
-    res.cookie("jwt", "", { maxAge: 0 });
+    res.cookie("token", "", { maxAge: 0 });
     res.status(200).json({ message: "Logout successfully" });
   } catch (error) {
     console.error("An error occurred in logout controller", error);
