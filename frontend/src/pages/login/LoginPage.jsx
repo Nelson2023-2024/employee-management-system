@@ -14,30 +14,9 @@ import { useTheme } from "../../components/theme-provider";
 import { Moon, Sun } from "lucide-react"; // Import icons for theme toggle
 
 const LoginPage = () => {
-  const { theme, setTheme } = useTheme();
-  
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
-      {/* Theme toggle button positioned at the top right */}
-      <div className="absolute top-4 right-4">
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
-      </div>
-
       <Card className="w-full max-w-md border shadow-sm">
         <form>
           <CardHeader className="pb-4 text-center">
