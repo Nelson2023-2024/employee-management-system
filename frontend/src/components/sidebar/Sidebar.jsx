@@ -10,6 +10,7 @@ import { useTheme } from "../../components/theme-provider";
 import { Button } from "../ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { cn } from "../../lib/utils"; // Make sure you have this utility
+import { useLogout } from "../../hooks/useLogout";
 
 const Sidebar = () => {
   const { setTheme, theme } = useTheme();
@@ -21,29 +22,7 @@ const Sidebar = () => {
     profileImg: "/avatars/boy1.png",
   };
 
-  const { mutate: logout } = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "Something went wrong");
-      }
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Logged out successfully");
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-
+  const { logout,isLoading } = useLogout();
   function handleLogout(event) {
     event.preventDefault();
     logout();
@@ -63,20 +42,24 @@ const Sidebar = () => {
       >
         {/* Background hover effect */}
         <div className="absolute inset-0 bg-accent/50 opacity-0 rounded-md group-hover:opacity-100 transition-opacity duration-300" />
-        
+
         {/* Active indicator */}
-        <div className={cn(
-          "absolute left-0 w-1 h-6 rounded-full bg-primary transform transition-all duration-300",
-          active ? "opacity-100" : "opacity-0 group-hover:opacity-50"
-        )} />
-        
+        <div
+          className={cn(
+            "absolute left-0 w-1 h-6 rounded-full bg-primary transform transition-all duration-300",
+            active ? "opacity-100" : "opacity-0 group-hover:opacity-50"
+          )}
+        />
+
         {/* Icon with subtle scale effect on hover */}
         <div className="relative z-10 group-hover:scale-110 transition-transform duration-300">
           <Icon className="w-5 h-5" />
         </div>
-        
+
         {/* Label with slide effect */}
-        <span className="text-sm font-medium hidden md:block relative z-10 transform group-hover:translate-x-1 transition-transform duration-300">{label}</span>
+        <span className="text-sm font-medium hidden md:block relative z-10 transform group-hover:translate-x-1 transition-transform duration-300">
+          {label}
+        </span>
       </Link>
     </li>
   );
@@ -84,16 +67,27 @@ const Sidebar = () => {
   return (
     <div className="w-20 md:w-60 flex-shrink-0 border-r border-border bg-secondary transition-all duration-300">
       <div className="sticky top-0 left-0 h-screen flex flex-col p-4 md:p-6">
-        <Link to="/" className="flex justify-center md:justify-start mb-6 group">
+        <Link
+          to="/"
+          className="flex justify-center md:justify-start mb-6 group"
+        >
           <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-white font-bold transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-md">
             JS
           </div>
         </Link>
-        
+
         <ul className="flex flex-col gap-3">
           <NavItem to="/" icon={MdHomeFilled} label="Home" active={false} />
-          <NavItem to="/notifications" icon={IoNotifications} label="Notifications" />
-          <NavItem to={`/profile/${authUser?.username}`} icon={FaUser} label="Profile" />
+          <NavItem
+            to="/notifications"
+            icon={IoNotifications}
+            label="Notifications"
+          />
+          <NavItem
+            to={`/profile/${authUser?.username}`}
+            icon={FaUser}
+            label="Profile"
+          />
         </ul>
 
         <div className="mt-auto flex flex-col gap-y-4">
@@ -104,13 +98,17 @@ const Sidebar = () => {
             className="w-full md:w-auto justify-center md:justify-start group hover:bg-accent/70 transition-all duration-300"
           >
             <div className="relative z-10  flex items-center gap-2">
-              {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+              {theme === "dark" ? (
+                <SunIcon className="h-4 w-4" />
+              ) : (
+                <MoonIcon className="h-4 w-4" />
+              )}
               <span className="sr-only md:not-sr-only md:transform ">
                 {theme === "dark" ? "Light" : "Dark"} Mode
               </span>
             </div>
           </Button>
-          
+
           {authUser && (
             <Link
               to={`/profile/${authUser?.username}`}
@@ -118,19 +116,26 @@ const Sidebar = () => {
             >
               {/* Subtle hover background */}
               <div className="absolute inset-0 bg-accent/30 opacity-0 rounded-md group-hover:opacity-100 transition-opacity duration-300" />
-              
+
               <Avatar className="w-8 h-8 relative z-10 ring-0 group-hover:ring-2 ring-primary/30 transition-all duration-300">
-                <AvatarImage src={authUser?.profileImg || "/avatar-placeholder.png"} alt={authUser?.fullName} />
-                <AvatarFallback>{authUser?.fullName?.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarImage
+                  src={authUser?.profileImg || "/avatar-placeholder.png"}
+                  alt={authUser?.fullName}
+                />
+                <AvatarFallback>
+                  {authUser?.fullName?.charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex flex-col text-left hidden md:block relative z-10 transform group-hover:translate-x-1 transition-transform duration-300">
                 <p className="text-sm font-semibold">{authUser?.fullName}</p>
-                <p className="text-xs text-muted-foreground">{authUser?.username}</p>
+                <p className="text-xs text-muted-foreground">
+                  {authUser?.username}
+                </p>
               </div>
             </Link>
           )}
-          
+
           <Button
             variant="outline"
             size="icon"
