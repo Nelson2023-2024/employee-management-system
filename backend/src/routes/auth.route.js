@@ -39,4 +39,14 @@ router.post("/login", async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 });
+
+//get the currently authenticated user
+router.get("/me", protectRoute, async (req, res) => {
+  try {
+    return res.status(200).json({ success: true, user: req.user });
+  } catch (error) {
+    console.error("An error occurred in me controller", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
 export { router as authRoutes };
