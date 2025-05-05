@@ -1,4 +1,3 @@
-
 import jwt from "jsonwebtoken";
 import { User } from "../models/User.model.js";
 
@@ -8,7 +7,9 @@ export const protectRoute = async (req, res, next) => {
     const token = req.cookies?.token;
 
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized44 - No token provided" });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized44 - No token provided" });
     }
 
     // Verify token
@@ -18,7 +19,12 @@ export const protectRoute = async (req, res, next) => {
     }
 
     // Find user in the database
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(decoded.userId)
+      .select("-password")
+      .populate([
+        { path: "department", select: "name description" },
+        { path: "leaveType" }, // or .populate("leaveType") if you want all its fields
+      ]);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -33,9 +39,9 @@ export const protectRoute = async (req, res, next) => {
 };
 
 export const adminRoute = (req, res, next) => {
-	if (req.user && req.user.role === "admin") {
-		next();
-	} else {
-		return res.status(403).json({ message: "Access denied - Admin only" });
-	}
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    return res.status(403).json({ message: "Access denied - Admin only" });
+  }
 };

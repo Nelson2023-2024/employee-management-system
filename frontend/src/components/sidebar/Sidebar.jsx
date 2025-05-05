@@ -3,7 +3,7 @@ import { IoNotifications } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { BiLogOut } from "react-icons/bi";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import { useTheme } from "../../components/theme-provider";
@@ -16,13 +16,17 @@ const Sidebar = () => {
   const { setTheme, theme } = useTheme();
 
   // Placeholder data (replace with actual data)
-  const authUser = {
+  const authUser1 = {
     fullName: "John Doe",
     username: "johndoe",
     profileImg: "/avatars/boy1.png",
   };
 
-  const { logout,isLoading } = useLogout();
+  const { data: authUser } = useQuery({
+    queryKey: ["authUser"],
+  });
+
+  const { logout, isLoading } = useLogout();
   function handleLogout(event) {
     event.preventDefault();
     logout();
@@ -65,7 +69,7 @@ const Sidebar = () => {
   );
 
   return (
-    <div className="w-20 md:w-60 flex-shrink-0 border-r border-border bg-secondary transition-all duration-300">
+    <div className="w-20 md:w-60 flex-shrink-0 border-r border-border bg-secondary transition-all duration-300 fixed">
       <div className="sticky top-0 left-0 h-screen flex flex-col p-4 md:p-6">
         <Link
           to="/"
@@ -111,7 +115,7 @@ const Sidebar = () => {
 
           {authUser && (
             <Link
-              to={`/profile/${authUser?.username}`}
+              to={`/profile`}
               className="group flex gap-2 items-center transition-all duration-300 hover:bg-accent/50 rounded-md py-2 px-3 relative"
             >
               {/* Subtle hover background */}
@@ -129,9 +133,6 @@ const Sidebar = () => {
 
               <div className="flex flex-col text-left hidden md:block relative z-10 transform group-hover:translate-x-1 transition-transform duration-300">
                 <p className="text-sm font-semibold">{authUser?.fullName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {authUser?.username}
-                </p>
               </div>
             </Link>
           )}

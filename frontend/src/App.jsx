@@ -7,6 +7,7 @@ import LoginPage from "./pages/login/LoginPage";
 import Sidebar from "./components/sidebar/SideBar";
 import { useAuth } from "./hooks/useAuth";
 import { Toaster } from "react-hot-toast";
+import ProfilePage from "./pages/profile/ProfilePage";
 
 function App() {
   const { data: authUser } = useAuth();
@@ -18,8 +19,20 @@ function App() {
       {/* Main Content - starts after sidebar */}
       <div className="flex-1 ">
         <Routes>
-          <Route path="/" element={authUser ?<HomePage /> : <Navigate to={'/login'}/>} />
-          <Route path="/login" element={!authUser?<LoginPage/>: <Navigate to={"/"}/>} />
+          <Route
+            path="/"
+            element={authUser ? <HomePage /> : <Navigate to={"/login"} />}
+          />
+          <Route
+            path="/login"
+            element={!authUser ? <LoginPage /> : <Navigate to={"/"} />}
+          />
+          <Route
+            path="/profile"
+            element={
+              authUser ? <ProfilePage /> : <Navigate to="/login" replace />
+            }
+          />
         </Routes>
         <Toaster />
       </div>
