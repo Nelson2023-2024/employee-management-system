@@ -8,6 +8,27 @@ const router = Router();
 
 router.use(protectRoute);
 
+
+// 🔥 NEW: Fetch all leave types
+router.get("/", async (req, res) => {
+  try {
+    const leaveTypes = await LeaveType.find({})
+      .sort({ name: 1 }); // optional: alphabetical
+
+    res.status(200).json({
+      message: "All leave types retrieved successfully",
+      count: leaveTypes.length,
+      leaveTypes,
+    });
+  } catch (error) {
+    console.error("Get-leaveTypes error:", error.message);
+    res.status(500).json({
+      message: "Failed to retrieve leave types",
+      error: error.message,
+    });
+  }
+});
+
 router.post("/:leaveTypeId", async (req, res) => {
   try {
     const { leaveTypeId } = req.params;
@@ -85,7 +106,7 @@ router.post("/:leaveTypeId", async (req, res) => {
 });
 
 // Add to existing leaveRoutes.js
-router.get("/", async (req, res) => {
+router.get("/my-leaves", async (req, res) => {
     try {
       const leaves = await LeaveRequest.find({ employee: req.user._id })
         .populate("leaveType", "name description maxDays")
