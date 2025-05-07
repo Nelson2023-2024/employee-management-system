@@ -126,4 +126,27 @@ router.get("/my-leaves", async (req, res) => {
       });
     }
   });
+
+  router.get("/my-requests", async (req, res) => {
+    try {
+      const leaveRequests = await LeaveRequest.find({
+        employee: req.user._id
+      })
+      .populate('leaveType')
+      .sort({ createdAt: -1 });
+  
+      res.status(200).json({
+        success: true,
+        count: leaveRequests.length,
+        leaveRequests
+      });
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+      res.status(500).json({
+        message: "Failed to fetch leave requests",
+        error: error.message
+      });
+    }
+  });
+  
 export { router as leaveRoutes };

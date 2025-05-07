@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+// hooks/useLeave.js
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-hot-toast";
 
 // Custom hook for fetching leave types
 export const useLeaveTypes = () => {
@@ -19,3 +21,62 @@ export const useLeaveTypes = () => {
     },
   });
 };
+
+// Toggle (apply/remove) a leave request for the given leaveTypeId
+export function useToggleLeave() {
+  const queryClient = useQueryClient();
+
+  const { mutate: toggleLeave, isLoading } = useMutation({
+    mutationFn: async (leaveTypeId) => {
+      const res = await fetch(
+        `http://localhost:5005/api/leave/${leaveTypeId}`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to toggle leave request");
+      }
+      return data;
+    },
+    onSuccess: (payload) => {
+      // Invalidate both leave-types list (to refresh badges) and user's own requests if you track them
+      queryClient.invalidateQueries(["leaveTypes"]);
+      queryClient.invalidateQueries(["myLeaves"]);
+      
+      // Show appropriate notification based on the action taken
+      if (payload.action === "created") {
+        toast.success(payload.message);
+      } else if (payload.action === "removed") {
+        toast.success("Leave request successfully canceled");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Could not update leave request");
+    },
+  });
+
+  return { toggleLeave, isLoading };
+}
+
+// Custom hook for fetching user's leave requests (new hook)
+export const useMyLeaveRequests = () => {
+    return useQuery({
+      queryKey: ["myLeaves"],
+      queryFn: async () => {
+        const response = await fetch("http://localhost:5005/api/leave/my-requests", {
+          credentials: "include",
+        });
+  
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to fetch your leave requests");
+        }
+  
+        const data = await response.json();
+        return data;
+      },
+    });
+  };
