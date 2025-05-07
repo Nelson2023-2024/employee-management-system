@@ -81,16 +81,16 @@ const Sidebar = () => {
         </Link>
 
         <ul className="flex flex-col gap-3">
-          <NavItem to="/" icon={MdHomeFilled} label="Home" active={false} />
+          <NavItem to="/" icon={MdHomeFilled} label="Dashboard" active={false} />
           <NavItem
-            to="/notifications"
+            to="/leave"
             icon={IoNotifications}
-            label="Notifications"
+            label="Leave"
           />
           <NavItem
-            to={`/profile/${authUser?.username}`}
+            to={`/attendance`}
             icon={FaUser}
-            label="Profile"
+            label="Attendance"
           />
         </ul>
 

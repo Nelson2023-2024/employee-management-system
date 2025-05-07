@@ -8,6 +8,7 @@ import Sidebar from "./components/sidebar/SideBar";
 import { useAuth } from "./hooks/useAuth";
 import { Toaster } from "react-hot-toast";
 import ProfilePage from "./pages/profile/ProfilePage";
+import AttendancePage from "./pages/attendance/AttendancePage";
 
 function App() {
   const { data: authUser } = useAuth();
@@ -29,10 +30,12 @@ function App() {
           />
           <Route
             path="/profile"
-            element={
-              authUser ? <ProfilePage /> : <Navigate to="/login" replace />
-            }
+            element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
           />
+          <Route
+  path="/attendance"
+  element={<AttendancePage />}
+/>
         </Routes>
         <Toaster />
       </div>
