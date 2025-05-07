@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { protectRoute } from "../middleware/protectRoute.js";
+import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 import { Attendance } from "../models/Attendance.model.js";
 
 const router = Router();
@@ -62,4 +62,29 @@ router.get("/", async (req, res) => {
     }
   });
 
+
+router.use(adminRoute)
+
+// GET /api/admin/attendance
+router.get("/admin-attendance", async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const filter = {};
+      if (startDate && endDate) {
+        filter.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+      }
+  
+      const attendanceRecords = await Attendance.find(filter)
+        .populate("employee", "fullName email")
+        .sort({ date: -1 });
+  
+      res.status(200).json({ attendanceRecords });
+    } catch (error) {
+      console.error("Error fetching attendance records:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+
+  
 export { router as attendanceRoutes };
