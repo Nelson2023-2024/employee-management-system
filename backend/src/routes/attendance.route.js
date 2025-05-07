@@ -64,7 +64,24 @@ router.get("/", async (req, res) => {
       res.status(500).json({ message: "Internal server error", error: error.message });
     }
   });
+// In your attendance routes
+router.get("/today", async (req, res) => {
+  try {
+    const employeeId = req.user._id;
+    const today = new Date();
+    const dateOnly = new Date(today.toDateString());
 
+    const attendance = await Attendance.findOne({
+      employee: employeeId,
+      date: dateOnly
+    });
+
+    res.status(200).json(attendance || {});
+  } catch (error) {
+    console.error("Error fetching today's attendance:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 router.use(adminRoute)
 
