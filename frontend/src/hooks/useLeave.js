@@ -1,18 +1,21 @@
-// hooks/useAuth.js
 import { useQuery } from "@tanstack/react-query";
 
-export const useAuth = () => {
+// Custom hook for fetching leave types
+export const useLeaveTypes = () => {
   return useQuery({
-    queryKey: ["leaveData"],
+    queryKey: ["leaveTypes"],
     queryFn: async () => {
       const response = await fetch("http://localhost:5005/api/leave", {
-        credentials: "include", // Important!
+        credentials: "include",
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to fetch leave types");
+      }
 
-      if (!response.ok) throw new Error(data.error || "Leave Fecth failed");
-      return data.user;
+      const data = await response.json();
+      return data;
     },
   });
 };

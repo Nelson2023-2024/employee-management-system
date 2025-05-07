@@ -1,5 +1,5 @@
+// pages/leavePage.jsx
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardHeader,
@@ -11,26 +11,7 @@ import {
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Loader2, Calendar, Clock, AlertCircle } from "lucide-react";
-
-// Custom hook for fetching leave types
-export const useLeaveTypes = () => {
-  return useQuery({
-    queryKey: ["leaveTypes"],
-    queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/leave", {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to fetch leave types");
-      }
-
-      const data = await response.json();
-      return data;
-    },
-  });
-};
+import { useLeaveTypes } from "../../hooks/useLeave";
 
 const LeaveTypeCard = ({ leave }) => {
   return (
@@ -84,7 +65,6 @@ function getLeaveTypeColor(leaveName) {
     "Work From Home": "#0ea5e9", // Sky
     "Compensatory Off": "#f97316", // Orange
   };
-
   // Return the mapped color or a default color
   return colorMap[leaveName] || "#6366f1"; // Default to indigo
 }
@@ -123,13 +103,13 @@ const LeavePage = () => {
           <h1 className="text-3xl font-bold">Leave Types</h1>
           <p className="text-muted-foreground mt-2 flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <span>{data.count} types of leave available for your use</span>
+            <span>{data?.count} types of leave available for your use</span>
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {data.leaveTypes.map((leave) => (
+        {data?.leaveTypes?.map((leave) => (
           <LeaveTypeCard key={leave._id} leave={leave} />
         ))}
       </div>
