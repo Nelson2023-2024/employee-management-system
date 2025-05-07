@@ -41,4 +41,25 @@ router.post("/", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/attendance
+ * Returns all attendance records for the current user.
+ */
+router.get("/", async (req, res) => {
+    try {
+      const employeeId = req.user._id;
+      const records = await Attendance.find({ employee: employeeId })
+        .sort({ date: 1 })
+        .select("date status -_id");
+  
+      res.status(200).json({
+        count: records.length,
+        attendance: records,
+      });
+    } catch (error) {
+      console.error("Error fetching attendance:", error);
+      res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+  });
+
 export { router as attendanceRoutes };
