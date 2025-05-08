@@ -80,3 +80,42 @@ export const useMyLeaveRequests = () => {
       },
     });
   };
+
+// NEW: Custom hook for creating a new leave type (admin only)
+export function useCreateLeaveType() {
+    const queryClient = useQueryClient();
+  
+    const { mutate: createLeaveType, isLoading } = useMutation({
+      mutationFn: async (leaveData) => {
+        const res = await fetch(
+          "http://localhost:5005/api/admin-mangage-leave",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(leaveData),
+            credentials: "include",
+          }
+        );
+        
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to create leave type");
+        }
+        return data;
+      },
+      onSuccess: (payload) => {
+        // Invalidate leave types to refresh the list
+        queryClient.invalidateQueries(["leaveTypes"]);
+        
+        // Show success notification
+        toast.success(payload.message || "Leave type created successfully");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Could not create leave type");
+      },
+    });
+  
+    return { createLeaveType, isLoading };
+  }

@@ -10,16 +10,128 @@ import {
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { Loader2, Calendar, Clock, AlertCircle, Check } from "lucide-react";
-import { useLeaveTypes, useToggleLeave, useMyLeaveRequests } from "../../hooks/useLeave";
-import { toast } from "react-hot-toast"; // Import toast for notifications
+import { 
+  Loader2, 
+  Calendar, 
+  Clock, 
+  AlertCircle, 
+  Check, 
+  Plus 
+} from "lucide-react";
+import { useLeaveTypes, useToggleLeave, useMyLeaveRequests, useCreateLeaveType } from "../../hooks/useLeave";
+import { toast } from "react-hot-toast";
+import { useAuth } from "../../hooks/useAuth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
+
+// Add this new CreateLeaveModal component
+const CreateLeaveModal = ({ isOpen, onClose }) => {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [maxDays, setMaxDays] = useState("");
+  const { createLeaveType, isLoading } = useCreateLeaveType();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Validate the form
+    if (!name || !description || !maxDays) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    // Create the new leave type
+    createLeaveType(
+      { name, description, maxDays: parseInt(maxDays) },
+      {
+        onSuccess: () => {
+          // Reset form and close modal
+          setName("");
+          setDescription("");
+          setMaxDays("");
+          onClose();
+        }
+      }
+    );
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Leave Type</DialogTitle>
+          <DialogDescription>
+            Add a new leave type for employees to request.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                placeholder="Annual Leave"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
+                placeholder="Time off for vacation or personal matters"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="maxDays">Maximum Days</Label>
+              <Input 
+                id="maxDays" 
+                type="number" 
+                value={maxDays} 
+                onChange={(e) => setMaxDays(e.target.value)} 
+                placeholder="21"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const LeaveTypeCard = ({ leave, activeRequests }) => {
   // Use the toggle leave hook
   const { toggleLeave, isLoading } = useToggleLeave();
-
-  // Debug - see what's happening with activeRequests
-  console.log("Active requests for", leave.name, ":", activeRequests);
   
   // Check if this leave type is already applied for - explicit true/false value
   const isApplied = Boolean(activeRequests?.some(
@@ -59,13 +171,10 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
         </div>
       </CardHeader>
       
-      {/* Add Applied badge at the top of content area for better visibility */}
-      {/* Single CardContent with description and badge */}
       <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground leading-relaxed mb-2">
           {leave.description}
         </p>
-        {/* Explicitly rendered badge */}
         {isApplied && <Badge variant="outline">Applied</Badge>}
       </CardContent>
 
@@ -115,9 +224,17 @@ function getLeaveTypeColor(leaveName) {
 const LeavePage = () => {
   const { data: leaveTypesData, isLoading: isLoadingTypes, isError: isTypesError, error: typesError } = useLeaveTypes();
   const { data: myLeavesData, isLoading: isLoadingMyLeaves } = useMyLeaveRequests();
+  const { data: authUser } = useAuth();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = authUser?.role === "admin";
 
   // Combined loading state
   const isLoading = isLoadingTypes || isLoadingMyLeaves;
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   if (isLoading) {
     return (
@@ -159,11 +276,26 @@ const LeavePage = () => {
           </p>
         </div>
         
-        {activeRequests.length > 0 && (
-          <Badge variant="secondary" className="py-1 px-2">
-            {activeRequests.length} Active Request{activeRequests.length !== 1 ? 's' : ''}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {activeRequests.length > 0 && (
+            <Badge variant="secondary" className="py-1 px-2">
+              {activeRequests.length} Active Request{activeRequests.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+
+          {/* Add button for admin users only */}
+          {isAdmin && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex items-center gap-1" 
+              onClick={openModal}
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
@@ -175,6 +307,12 @@ const LeavePage = () => {
           />
         ))}
       </div>
+
+      {/* Render the modal component */}
+      <CreateLeaveModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 };
