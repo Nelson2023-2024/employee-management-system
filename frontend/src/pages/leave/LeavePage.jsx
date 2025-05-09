@@ -11,7 +11,11 @@ import {
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Loader2, Calendar, Clock, AlertCircle, Trash2 } from "lucide-react";
-import { useLeaveTypes, useToggleLeave, useMyLeaveRequests } from "../../hooks/useLeave";
+import {
+  useLeaveTypes,
+  useToggleLeave,
+  useMyLeaveRequests,
+} from "../../hooks/useLeave";
 import { useDeleteLeaveType } from "../../hooks/useLeave"; // Import the delete hook
 import { toast } from "react-hot-toast"; // Import toast for notifications
 import { useAuth } from "../../hooks/useAuth"; // Import auth hook to check admin status
@@ -19,16 +23,17 @@ import { useAuth } from "../../hooks/useAuth"; // Import auth hook to check admi
 const LeaveTypeCard = ({ leave, activeRequests }) => {
   // Use the toggle leave hook
   const { toggleLeave, isLoading } = useToggleLeave();
-  
+
   // Use the delete leave type hook
-  const { mutate: deleteLeaveType, isLoading: isDeleting } = useDeleteLeaveType();
-  
+  const { mutate: deleteLeaveType, isLoading: isDeleting } =
+    useDeleteLeaveType();
+
   // For debugging delete functionality
   const handleDeleteWithLogging = (id) => {
     console.log("Attempting to delete leave type with ID:", id);
     deleteLeaveType(id);
   };
-  
+
   // Get current user to check if admin
   const { data: authUser } = useAuth();
   const isAdmin = authUser?.role === "admin";
@@ -37,21 +42,28 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
 
   // Debug - see what's happening with activeRequests
   console.log("Active requests for", leave.name, ":", activeRequests);
-  
+
   // Check if this leave type is already applied for - explicit true/false value
-  const isApplied = Boolean(activeRequests?.some(
-    request => request.leaveType._id === leave._id && 
-    ["Pending", "Approved"].includes(request.status)
-  ));
+  const isApplied = Boolean(
+    activeRequests?.some(
+      (request) =>
+        request.leaveType._id === leave._id &&
+        ["Pending", "Approved"].includes(request.status)
+    )
+  );
 
   // Handle the button click
   const handleToggleLeave = () => {
     toggleLeave(leave._id);
   };
-  
+
   // Handle delete button click
   const handleDeleteLeave = () => {
-    if (window.confirm(`Are you sure you want to delete the "${leave.name}" leave type?`)) {
+    if (
+      window.confirm(
+        `Are you sure you want to delete the "${leave.name}" leave type?`
+      )
+    ) {
       console.log("Deleting leave type:", leave);
       handleDeleteWithLogging(leave._id);
     }
@@ -59,15 +71,13 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
 
   return (
     <Card
-      className="overflow-hidden transition-all hover:shadow-lg border-t-4"
+      className="flex justify-between overflow-hidden transition-all hover:shadow-lg border-t-4"
       style={{ borderTopColor: getLeaveTypeColor(leave.name) }}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">
-              {leave.name}
-            </CardTitle>
+            <CardTitle className="text-lg font-bold">{leave.name}</CardTitle>
             <CardDescription className="mt-1 flex items-center gap-1">
               <Clock className="h-4 w-4" />
               <span>Max {leave.maxDays} days</span>
@@ -83,7 +93,7 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground leading-relaxed mb-2">
           {leave.description}
@@ -93,9 +103,9 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
 
       <CardFooter className="bg-muted/50 pt-2 pb-2">
         <div className="w-full flex gap-2">
-          <Button 
-            className="flex-1 cursor-pointer" 
-            variant={isApplied ? "destructive" : "default"} 
+          <Button
+            className="flex-1 cursor-pointer"
+            variant={isApplied ? "destructive" : "default"}
             size="sm"
             onClick={handleToggleLeave}
             disabled={isLoading}
@@ -105,15 +115,13 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
               </>
+            ) : isApplied ? (
+              `Cancel ${leave.name}`
             ) : (
-              isApplied ? (
-                `Cancel ${leave.name}`
-              ) : (
-                `Apply for ${leave.name}`
-              )
+              `Apply for ${leave.name}`
             )}
           </Button>
-          
+
           {/* Delete button - only visible for admins */}
           {isAdmin && (
             <Button
@@ -131,10 +139,12 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
               )}
             </Button>
           )}
-          
+
           {/* Debug Admin Status */}
-          {process.env.NODE_ENV === 'development' && (
-            <span className="text-xs text-muted-foreground hidden">Admin: {isAdmin ? 'Yes' : 'No'}</span>
+          {process.env.NODE_ENV === "development" && (
+            <span className="text-xs text-muted-foreground hidden">
+              Admin: {isAdmin ? "Yes" : "No"}
+            </span>
           )}
         </div>
       </CardFooter>
@@ -160,8 +170,14 @@ function getLeaveTypeColor(leaveName) {
 }
 
 const LeavePage = () => {
-  const { data: leaveTypesData, isLoading: isLoadingTypes, isError: isTypesError, error: typesError } = useLeaveTypes();
-  const { data: myLeavesData, isLoading: isLoadingMyLeaves } = useMyLeaveRequests();
+  const {
+    data: leaveTypesData,
+    isLoading: isLoadingTypes,
+    isError: isTypesError,
+    error: typesError,
+  } = useLeaveTypes();
+  const { data: myLeavesData, isLoading: isLoadingMyLeaves } =
+    useMyLeaveRequests();
 
   // Combined loading state
   const isLoading = isLoadingTypes || isLoadingMyLeaves;
@@ -191,9 +207,10 @@ const LeavePage = () => {
   }
 
   // Get active leave requests (Pending or Approved)
-  const activeRequests = myLeavesData?.leaveRequests?.filter(
-    request => ["Pending", "Approved"].includes(request.status)
-  ) || [];
+  const activeRequests =
+    myLeavesData?.leaveRequests?.filter((request) =>
+      ["Pending", "Approved"].includes(request.status)
+    ) || [];
 
   return (
     <div className="container max-w-2xl py-8 mx-auto">
@@ -202,22 +219,25 @@ const LeavePage = () => {
           <h1 className="text-3xl font-bold">Leave Types</h1>
           <p className="text-muted-foreground mt-2 flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <span>{leaveTypesData?.count} types of leave available for your use</span>
+            <span>
+              {leaveTypesData?.count} types of leave available for your use
+            </span>
           </p>
         </div>
-        
+
         {activeRequests.length > 0 && (
           <Badge variant="secondary" className="py-1 px-2">
-            {activeRequests.length} Active Request{activeRequests.length !== 1 ? 's' : ''}
+            {activeRequests.length} Active Request
+            {activeRequests.length !== 1 ? "s" : ""}
           </Badge>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {leaveTypesData?.leaveTypes?.map((leave) => (
-          <LeaveTypeCard 
-            key={leave._id} 
-            leave={leave} 
+          <LeaveTypeCard
+            key={leave._id}
+            leave={leave}
             activeRequests={activeRequests}
           />
         ))}
