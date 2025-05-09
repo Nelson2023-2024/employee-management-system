@@ -119,3 +119,28 @@ export function useCreateLeaveType() {
   
     return { createLeaveType, isLoading };
   }
+
+  // Add new hook to useLeave.js
+export function useDeleteLeaveType() {
+    const queryClient = useQueryClient();
+  
+    return useMutation({
+      mutationFn: async (leaveId) => {
+        const res = await fetch(`http://localhost:5005/api/admin-mangage-leave/${leaveId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to delete leave');
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries(['leaveTypes']);
+        toast.success('Leave type deleted successfully');
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to delete leave type');
+      }
+    });
+  }

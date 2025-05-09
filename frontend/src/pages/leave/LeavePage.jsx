@@ -10,128 +10,33 @@ import {
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { 
-  Loader2, 
-  Calendar, 
-  Clock, 
-  AlertCircle, 
-  Check, 
-  Plus 
-} from "lucide-react";
-import { useLeaveTypes, useToggleLeave, useMyLeaveRequests, useCreateLeaveType } from "../../hooks/useLeave";
-import { toast } from "react-hot-toast";
-import { useAuth } from "../../hooks/useAuth";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
-import { Input } from "../../components/ui/input";
-import { Textarea } from "../../components/ui/textarea";
-
-// Add this new CreateLeaveModal component
-const CreateLeaveModal = ({ isOpen, onClose }) => {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [maxDays, setMaxDays] = useState("");
-  const { createLeaveType, isLoading } = useCreateLeaveType();
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validate the form
-    if (!name || !description || !maxDays) {
-      toast.error("All fields are required");
-      return;
-    }
-
-    // Create the new leave type
-    createLeaveType(
-      { name, description, maxDays: parseInt(maxDays) },
-      {
-        onSuccess: () => {
-          // Reset form and close modal
-          setName("");
-          setDescription("");
-          setMaxDays("");
-          onClose();
-        }
-      }
-    );
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create New Leave Type</DialogTitle>
-          <DialogDescription>
-            Add a new leave type for employees to request.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input 
-                id="name" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                placeholder="Annual Leave"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                placeholder="Time off for vacation or personal matters"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="maxDays">Maximum Days</Label>
-              <Input 
-                id="maxDays" 
-                type="number" 
-                value={maxDays} 
-                onChange={(e) => setMaxDays(e.target.value)} 
-                placeholder="21"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
+import { Loader2, Calendar, Clock, AlertCircle, Trash2 } from "lucide-react";
+import { useLeaveTypes, useToggleLeave, useMyLeaveRequests } from "../../hooks/useLeave";
+import { useDeleteLeaveType } from "../../hooks/useLeave"; // Import the delete hook
+import { toast } from "react-hot-toast"; // Import toast for notifications
+import { useAuth } from "../../hooks/useAuth"; // Import auth hook to check admin status
 
 const LeaveTypeCard = ({ leave, activeRequests }) => {
   // Use the toggle leave hook
   const { toggleLeave, isLoading } = useToggleLeave();
+  
+  // Use the delete leave type hook
+  const { mutate: deleteLeaveType, isLoading: isDeleting } = useDeleteLeaveType();
+  
+  // For debugging delete functionality
+  const handleDeleteWithLogging = (id) => {
+    console.log("Attempting to delete leave type with ID:", id);
+    deleteLeaveType(id);
+  };
+  
+  // Get current user to check if admin
+  const { data: authUser } = useAuth();
+  const isAdmin = authUser?.role === "admin";
+  console.log("Auth user:", authUser);
+  console.log("Is admin?", isAdmin);
+
+  // Debug - see what's happening with activeRequests
+  console.log("Active requests for", leave.name, ":", activeRequests);
   
   // Check if this leave type is already applied for - explicit true/false value
   const isApplied = Boolean(activeRequests?.some(
@@ -142,6 +47,14 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
   // Handle the button click
   const handleToggleLeave = () => {
     toggleLeave(leave._id);
+  };
+  
+  // Handle delete button click
+  const handleDeleteLeave = () => {
+    if (window.confirm(`Are you sure you want to delete the "${leave.name}" leave type?`)) {
+      console.log("Deleting leave type:", leave);
+      handleDeleteWithLogging(leave._id);
+    }
   };
 
   return (
@@ -179,26 +92,51 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
       </CardContent>
 
       <CardFooter className="bg-muted/50 pt-2 pb-2">
-        <Button 
-          className="w-full cursor-pointer" 
-          variant={isApplied ? "destructive" : "default"} 
-          size="sm"
-          onClick={handleToggleLeave}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            isApplied ? (
-              `Cancel ${leave.name}`
+        <div className="w-full flex gap-2">
+          <Button 
+            className="flex-1 cursor-pointer" 
+            variant={isApplied ? "destructive" : "default"} 
+            size="sm"
+            onClick={handleToggleLeave}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
             ) : (
-              `Apply for ${leave.name}`
-            )
+              isApplied ? (
+                `Cancel ${leave.name}`
+              ) : (
+                `Apply for ${leave.name}`
+              )
+            )}
+          </Button>
+          
+          {/* Delete button - only visible for admins */}
+          {isAdmin && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteLeave}
+              disabled={isDeleting}
+              className="cursor-pointer flex-shrink-0"
+              title="Delete leave type"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </Button>
           )}
-        </Button>
+          
+          {/* Debug Admin Status */}
+          {process.env.NODE_ENV === 'development' && (
+            <span className="text-xs text-muted-foreground hidden">Admin: {isAdmin ? 'Yes' : 'No'}</span>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
@@ -224,17 +162,9 @@ function getLeaveTypeColor(leaveName) {
 const LeavePage = () => {
   const { data: leaveTypesData, isLoading: isLoadingTypes, isError: isTypesError, error: typesError } = useLeaveTypes();
   const { data: myLeavesData, isLoading: isLoadingMyLeaves } = useMyLeaveRequests();
-  const { data: authUser } = useAuth();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Check if user is admin
-  const isAdmin = authUser?.role === "admin";
 
   // Combined loading state
   const isLoading = isLoadingTypes || isLoadingMyLeaves;
-
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
 
   if (isLoading) {
     return (
@@ -276,26 +206,11 @@ const LeavePage = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          {activeRequests.length > 0 && (
-            <Badge variant="secondary" className="py-1 px-2">
-              {activeRequests.length} Active Request{activeRequests.length !== 1 ? 's' : ''}
-            </Badge>
-          )}
-
-          {/* Add button for admin users only */}
-          {isAdmin && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="flex items-center gap-1" 
-              onClick={openModal}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add</span>
-            </Button>
-          )}
-        </div>
+        {activeRequests.length > 0 && (
+          <Badge variant="secondary" className="py-1 px-2">
+            {activeRequests.length} Active Request{activeRequests.length !== 1 ? 's' : ''}
+          </Badge>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
@@ -307,12 +222,6 @@ const LeavePage = () => {
           />
         ))}
       </div>
-
-      {/* Render the modal component */}
-      <CreateLeaveModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-      />
     </div>
   );
 };
