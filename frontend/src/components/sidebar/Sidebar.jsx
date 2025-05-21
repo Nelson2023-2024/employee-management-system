@@ -14,7 +14,8 @@ import {
   CalendarCheck, 
   DollarSign, 
   Settings, 
-  LogOut 
+  LogOut, 
+  DoorOpen
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -37,7 +38,7 @@ const Sidebar = () => {
     { icon: LayoutDashboard, label: "Dashboard", path: "/", active: true },
     { icon: Users, label: "Employees", path: "/employees" },
     { icon: CalendarCheck, label: "Attendance", path: "/attendance" },
-    { icon: DollarSign, label: "Payroll", path: "/payroll" },
+    { icon: DoorOpen, label: "Leave", path: "/leave" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
 

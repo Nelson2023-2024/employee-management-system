@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import ProfilePage from "./pages/profile/ProfilePage";
 import AttendancePage from "./pages/attendance/AttendancePage";
 import LeavePage from "./pages/leave/LeavePage";
+import EmployeesPage from "./pages/employees/EmployeePage";
 
 function App() {
   const { data: authUser } = useAuth();
@@ -40,6 +41,10 @@ function App() {
           <Route
             path="/leave"
             element={authUser ? <LeavePage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/employees"
+            element={authUser ? <EmployeesPage /> : <Navigate to="/login" />}
           />
         </Routes>
         <Toaster />
