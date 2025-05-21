@@ -15,11 +15,11 @@ function App() {
   const { data: authUser } = useAuth();
   console.log("authUser:", authUser);
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-screen ">
       {authUser && <Sidebar />}
 
       {/* Main Content - starts after sidebar */}
-      <div className="flex-1 ">
+      <div className="flex-1 overflow-auto ">
         <Routes>
           <Route
             path="/"

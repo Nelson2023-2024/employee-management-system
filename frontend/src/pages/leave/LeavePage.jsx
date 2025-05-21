@@ -71,7 +71,7 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
 
   return (
     <Card
-      className="flex justify-between overflow-hidden transition-all hover:shadow-lg border-t-4"
+      className="flex justify-between overflow-hidden transition-all hover:shadow-lg border-t-4 max-w-2xl"
       style={{ borderTopColor: getLeaveTypeColor(leave.name) }}
     >
       <CardHeader className="pb-2">
@@ -213,7 +213,7 @@ const LeavePage = () => {
     ) || [];
 
   return (
-    <div className="container max-w-2xl py-8 mx-auto">
+    <div className=" px-4 sm:px-6 lg:px-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Leave Types</h1>
@@ -233,7 +233,7 @@ const LeavePage = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {leaveTypesData?.leaveTypes?.map((leave) => (
           <LeaveTypeCard
             key={leave._id}

@@ -1,154 +1,127 @@
-import { MdHomeFilled } from "react-icons/md";
-import { IoNotifications } from "react-icons/io5";
-import { FaUser } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import { BiLogOut } from "react-icons/bi";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
-import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import { useTheme } from "../../components/theme-provider";
+import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { Link } from "react-router-dom";
+import { cn } from "../../lib/utils";
+import { useLogout } from "../../hooks/useLogout";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "../ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
-import { cn } from "../../lib/utils"; // Make sure you have this utility
-import { useLogout } from "../../hooks/useLogout";
+
+// Import icons from Lucide React instead of various sources
+import { 
+  LayoutDashboard, 
+  Users, 
+  CalendarCheck, 
+  DollarSign, 
+  Settings, 
+  LogOut 
+} from "lucide-react";
 
 const Sidebar = () => {
   const { setTheme, theme } = useTheme();
+  const { logout, isLoading } = useLogout();
 
-  // Placeholder data (replace with actual data)
-  const authUser1 = {
-    fullName: "John Doe",
-    username: "johndoe",
-    profileImg: "/avatars/boy1.png",
-  };
-
+  // Get auth user data
   const { data: authUser } = useQuery({
     queryKey: ["authUser"],
   });
 
-  const { logout, isLoading } = useLogout();
   function handleLogout(event) {
     event.preventDefault();
+    console.log("Logout button clicked");
     logout();
   }
 
-  // Custom NavItem component for consistent styling and hover effects
-  const NavItem = ({ to, icon: Icon, label, active = false }) => (
-    <li>
-      <Link
-        to={to}
-        className={cn(
-          "group flex justify-center md:justify-start items-center gap-3 px-3 py-2 rounded-md relative",
-          "transition-all duration-300 ease-in-out",
-          "hover:text-primary",
-          active ? "text-primary" : "text-foreground"
-        )}
-      >
-        {/* Background hover effect */}
-        <div className="absolute inset-0 bg-accent/50 opacity-0 rounded-md group-hover:opacity-100 transition-opacity duration-300" />
-
-        {/* Active indicator */}
-        <div
-          className={cn(
-            "absolute left-0 w-1 h-6 rounded-full bg-primary transform transition-all duration-300",
-            active ? "opacity-100" : "opacity-0 group-hover:opacity-50"
-          )}
-        />
-
-        {/* Icon with subtle scale effect on hover */}
-        <div className="relative z-10 group-hover:scale-110 transition-transform duration-300">
-          <Icon className="w-5 h-5" />
-        </div>
-
-        {/* Label with slide effect */}
-        <span className="text-sm font-medium hidden md:block relative z-10 transform group-hover:translate-x-1 transition-transform duration-300">
-          {label}
-        </span>
-      </Link>
-    </li>
-  );
+  // Navigation items
+  const navItems = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/", active: true },
+    { icon: Users, label: "Employees", path: "/employees" },
+    { icon: CalendarCheck, label: "Attendance", path: "/attendance" },
+    { icon: DollarSign, label: "Payroll", path: "/payroll" },
+    { icon: Settings, label: "Settings", path: "/settings" },
+  ];
 
   return (
-    <div className="w-20 md:w-60 flex-shrink-0 border-r border-border bg-secondary transition-all duration-300 fixed">
-      <div className="sticky top-0 left-0 h-screen flex flex-col p-4 md:p-6">
-        <Link
-          to="/"
-          className="flex justify-center md:justify-start mb-6 group"
-        >
-          <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center text-white font-bold transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-md">
-            JS
-          </div>
-        </Link>
+    <div className="bg-background w-64 h-screen flex-shrink-0 border-r border-border">
+      <div className="flex flex-col h-full p-4">
+        {/* Logo/Header */}
+        <div className="mb-8">
+          <Link to="/" className="flex items-center">
+            <h1 className="text-xl font-bold text-primary">AEMS Admin</h1>
+          </Link>
+        </div>
 
-        <ul className="flex flex-col gap-3">
-          <NavItem to="/" icon={MdHomeFilled} label="Dashboard" active={false} />
-          <NavItem
-            to="/leave"
-            icon={IoNotifications}
-            label="Leave"
-          />
-          <NavItem
-            to={`/attendance`}
-            icon={FaUser}
-            label="Attendance"
-          />
-        </ul>
+        {/* Navigation */}
+        <nav className="flex-1">
+          <ul className="space-y-1">
+            {navItems.map((item) => (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium",
+                    item.active 
+                      ? "bg-primary text-primary-foreground" 
+                      : "hover:bg-accent text-foreground hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <div className="mt-auto flex flex-col gap-y-4">
+        {/* User profile and theme toggle */}
+        <div className="mt-auto space-y-3">
+          {/* Theme Toggle */}
           <Button
             variant="outline"
-            size="icon"
+            size="sm"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-full md:w-auto justify-center md:justify-start group hover:bg-accent/70 transition-all duration-300"
+            className="w-full justify-start"
           >
-            <div className="relative z-10  flex items-center gap-2">
-              {theme === "dark" ? (
-                <SunIcon className="h-4 w-4" />
-              ) : (
-                <MoonIcon className="h-4 w-4" />
-              )}
-              <span className="sr-only md:not-sr-only md:transform ">
-                {theme === "dark" ? "Light" : "Dark"} Mode
-              </span>
-            </div>
+            {theme === "dark" ? (
+              <SunIcon className="h-4 w-4 mr-2" />
+            ) : (
+              <MoonIcon className="h-4 w-4 mr-2" />
+            )}
+            {theme === "dark" ? "Light" : "Dark"} Mode
           </Button>
 
+          {/* User Profile */}
           {authUser && (
             <Link
-              to={`/profile`}
-              className="group flex gap-2 items-center transition-all duration-300 hover:bg-accent/50 rounded-md py-2 px-3 relative"
+              to="/profile"
+              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent"
             >
-              {/* Subtle hover background */}
-              <div className="absolute inset-0 bg-accent/30 opacity-0 rounded-md group-hover:opacity-100 transition-opacity duration-300" />
-
-              <Avatar className="w-8 h-8 relative z-10 ring-0 group-hover:ring-2 ring-primary/30 transition-all duration-300">
+              <Avatar className="h-8 w-8">
                 <AvatarImage
                   src={authUser?.profileImg || "/avatar-placeholder.png"}
                   alt={authUser?.fullName}
                 />
                 <AvatarFallback>
-                  {authUser?.fullName?.charAt(0).toUpperCase()}
+                  {authUser?.fullName?.charAt(0).toUpperCase() || "A"}
                 </AvatarFallback>
               </Avatar>
-
-              <div className="flex flex-col text-left hidden md:block relative z-10 transform group-hover:translate-x-1 transition-transform duration-300">
-                <p className="text-sm font-semibold">{authUser?.fullName}</p>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">
+                  {authUser?.fullName || "Admin"}
+                </span>
               </div>
             </Link>
           )}
 
+          {/* Logout Button */}
           <Button
-            variant="outline"
-            size="icon"
-            className="w-full md:w-auto justify-center md:justify-start group  transition-all duration-300 cursor-pointer"
+            variant="ghost"
+            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
             onClick={handleLogout}
+            disabled={isLoading}
           >
-            <div className="relative z-10  flex items-center gap-2 ">
-              <BiLogOut className="h-4 w-4" />
-              <span className="sr-only md:not-sr-only md:transform ">
-                Logout
-              </span>
-            </div>
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
           </Button>
         </div>
       </div>
