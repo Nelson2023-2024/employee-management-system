@@ -8,6 +8,33 @@ const router = Router();
 
 router.use(protectRoute, adminRoute);
 
+router.get("/", async (req, res) => {
+  try {
+    // Fetch all leave requests
+    const leaveRequests = await LeaveRequest.find({})
+      .populate({
+        path: "employee", // Populate the employee field
+        select: "fullName email position department", // Select desired fields from User model
+        populate: {
+          path: "department", // Populate the department field within the employee
+          select: "name", // Select desired fields from Department model (e.g., 'name')
+        },
+      })
+      .populate("leaveType", "name description maxDays") // Populate the leaveType field
+      .sort({ createdAt: -1 }); // Sort by creation date, newest first
+
+    res.status(200).json({ leaveRequests });
+  } catch (error) {
+    console.log(
+      "An error occurred in the admin-get-all-leave-requests route:",
+      error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
 //create a leave
 router.post("/", async (req, res) => {
   try {
@@ -61,10 +88,7 @@ router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
     }
     res.status(200).json({ message: "Leave type deleted successfully" });
   } catch (error) {
-    console.log(
-      "An Error occured in the delete-leave route:",
-      error.message
-    );
+    console.log("An Error occured in the delete-leave route:", error.message);
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
@@ -80,7 +104,7 @@ router.patch("/toggle-leave/:id", async (req, res) => {
     // Find the leave request and determine new status
     const leaveRequest = await LeaveRequest.findOne({
       _id: id,
-      status: { $in: ["Approved", "Pending", "Rejected"] }
+      status: { $in: ["Approved", "Pending", "Rejected"] },
     });
 
     if (!leaveRequest) {
@@ -88,33 +112,29 @@ router.patch("/toggle-leave/:id", async (req, res) => {
     }
 
     // Toggle logic
-    const newStatus = leaveRequest.status === "Approved" 
-      ? "Rejected" 
-      : "Approved";
+    const newStatus =
+      leaveRequest.status === "Approved" ? "Rejected" : "Approved";
 
     const update = {
       status: newStatus,
       approver: adminId,
-      approvedDate: newStatus === "Approved" ? new Date() : null
+      approvedDate: newStatus === "Approved" ? new Date() : null,
     };
 
     // Atomic update
-    const updatedRequest = await LeaveRequest.findByIdAndUpdate(
-      id,
-      update,
-      { new: true }
-    ).populate("employee", "fullName email");
+    const updatedRequest = await LeaveRequest.findByIdAndUpdate(id, update, {
+      new: true,
+    }).populate("employee", "fullName email");
 
     res.status(200).json({
       message: `Leave ${newStatus.toLowerCase()} successfully`,
-      leave: updatedRequest
+      leave: updatedRequest,
     });
-
   } catch (error) {
     console.error("Toggle error:", error.message);
     res.status(500).json({
       message: "Failed to toggle leave status",
-      error: error.message
+      error: error.message,
     });
   }
 });
