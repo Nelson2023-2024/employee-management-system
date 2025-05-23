@@ -11,6 +11,7 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import AttendancePage from "./pages/attendance/AttendancePage";
 import LeavePage from "./pages/leave/LeavePage";
 import EmployeesPage from "./pages/employees/EmployeePage";
+import NotificationPage from "./pages/notifications/NotificationPage";
 
 function App() {
   const { data: authUser } = useAuth();
@@ -45,6 +46,10 @@ function App() {
           <Route
             path="/employees"
             element={authUser ? <EmployeesPage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/notifications"
+            element={authUser ? <NotificationPage /> : <Navigate to="/login" />}
           />
         </Routes>
         <Toaster />

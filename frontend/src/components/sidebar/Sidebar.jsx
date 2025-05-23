@@ -15,7 +15,8 @@ import {
   DollarSign, 
   Settings, 
   LogOut, 
-  DoorOpen
+  DoorOpen,
+  Bell
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -40,6 +41,7 @@ const Sidebar = () => {
     { icon: CalendarCheck, label: "Attendance", path: "/attendance" },
     { icon: DoorOpen, label: "Leave", path: "/leave" },
     { icon: Settings, label: "Settings", path: "/settings" },
+    { icon: Bell, label: "Notifications", path: "/notifications" },
   ];
 
   return (
