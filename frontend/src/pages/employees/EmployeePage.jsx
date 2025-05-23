@@ -19,6 +19,95 @@ import {
 import { ChevronDown, MoreHorizontal } from "lucide-react"; // Assuming you have lucide-react icons
 import { useGetAllEmployees } from "../../hooks/useEmployees";
 
+// Skeleton Component for Loading State
+const EmployeesTableSkeleton = () => {
+  return (
+    <div className="p-6">
+      {/* Header Section Skeleton */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+        <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+      </div>
+
+      {/* Search and Filter Section Skeleton */}
+      <div className="flex gap-4 mb-6">
+        {/* Search Input Skeleton */}
+        <div className="relative flex-1">
+          <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        {/* Department Filter Skeleton */}
+        <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+
+        {/* Status Filter Skeleton */}
+        <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+      </div>
+
+      {/* Table Skeleton */}
+      <div className="rounded-lg shadow overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>
+                <div className="h-5 bg-gray-200 rounded w-16 animate-pulse"></div>
+              </TableHead>
+              <TableHead>
+                <div className="h-5 bg-gray-200 rounded w-24 animate-pulse"></div>
+              </TableHead>
+              <TableHead>
+                <div className="h-5 bg-gray-200 rounded w-20 animate-pulse"></div>
+              </TableHead>
+              <TableHead>
+                <div className="h-5 bg-gray-200 rounded w-16 animate-pulse"></div>
+              </TableHead>
+              <TableHead>
+                <div className="h-5 bg-gray-200 rounded w-20 animate-pulse"></div>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {/* Generate 8 skeleton rows */}
+            {Array.from({ length: 8 }).map((_, index) => (
+              <TableRow key={index}>
+                {/* Name Column Skeleton */}
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-40 animate-pulse"></div>
+                    </div>
+                  </div>
+                </TableCell>
+                
+                {/* Department Column Skeleton */}
+                <TableCell>
+                  <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                </TableCell>
+                
+                {/* Position Column Skeleton */}
+                <TableCell>
+                  <div className="h-4 bg-gray-200 rounded w-28 animate-pulse"></div>
+                </TableCell>
+                
+                {/* Status Column Skeleton */}
+                <TableCell>
+                  <div className="h-6 bg-gray-200 rounded-full w-16 animate-pulse"></div>
+                </TableCell>
+                
+                {/* Actions Column Skeleton */}
+                <TableCell>
+                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
 const EmployeesPage = () => {
   const { employees, isLoading, isError, error } = useGetAllEmployees();
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,12 +115,7 @@ const EmployeesPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("All");
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-       <svg class="mr-3 size-5 animate-spin ..." viewBox="0 0 24 24">
-  </svg>
-      </div>
-    );
+    return <EmployeesTableSkeleton />;
   }
 
   if (isError) {
@@ -64,7 +148,6 @@ const EmployeesPage = () => {
     "All",
     ...new Set(employees.map((employee) => employee.employeeStatus)),
   ];
-
 
   return (
     <div className="p-6">

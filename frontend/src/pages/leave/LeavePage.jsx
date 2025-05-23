@@ -152,6 +152,48 @@ const LeaveTypeCard = ({ leave, activeRequests }) => {
   );
 };
 
+// Skeleton Card Component for Loading State
+const SkeletonLeaveCard = () => {
+  return (
+    <Card className="overflow-hidden border-t-4 border-gray-200 animate-pulse">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            {/* Title skeleton */}
+            <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+            {/* Description with icon skeleton */}
+            <div className="flex items-center gap-1">
+              <div className="h-4 w-4 bg-gray-200 rounded"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+            </div>
+          </div>
+          {/* Badge skeleton */}
+          <div className="h-6 bg-gray-200 rounded-full w-24"></div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-0">
+        {/* Description text skeleton */}
+        <div className="space-y-2 mb-3">
+          <div className="h-4 bg-gray-200 rounded w-full"></div>
+          <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+        </div>
+        {/* Optional applied badge skeleton */}
+        <div className="h-5 bg-gray-200 rounded w-16"></div>
+      </CardContent>
+
+      <CardFooter className="bg-muted/50 pt-2 pb-2">
+        <div className="w-full flex gap-2">
+          {/* Main button skeleton */}
+          <div className="flex-1 h-8 bg-gray-200 rounded"></div>
+          {/* Delete button skeleton */}
+          <div className="h-8 w-8 bg-gray-200 rounded"></div>
+        </div>
+      </CardFooter>
+    </Card>
+  );
+};
+
 // Function to generate consistent colors based on leave type name
 function getLeaveTypeColor(leaveName) {
   const colorMap = {
@@ -182,14 +224,27 @@ const LeavePage = () => {
   // Combined loading state
   const isLoading = isLoadingTypes || isLoadingMyLeaves;
 
+  // Loading state with skeleton cards
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
-          <p className="mt-4 text-muted-foreground">
-            Loading leave information...
-          </p>
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Leave Types</h1>
+            <div className="mt-2 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <div className="h-5 bg-gray-200 rounded w-64 animate-pulse"></div>
+            </div>
+          </div>
+          {/* Skeleton badge */}
+          <div className="h-6 bg-gray-200 rounded-full w-32 animate-pulse"></div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Render 6 skeleton cards to simulate typical leave types */}
+          {[...Array(6)].map((_, i) => (
+            <SkeletonLeaveCard key={i} />
+          ))}
         </div>
       </div>
     );
@@ -213,7 +268,7 @@ const LeavePage = () => {
     ) || [];
 
   return (
-    <div className=" px-4 sm:px-6 lg:px-8">
+    <div className="px-4 sm:px-6 lg:px-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Leave Types</h1>
