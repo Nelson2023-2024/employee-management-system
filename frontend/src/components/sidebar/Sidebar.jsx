@@ -40,7 +40,7 @@ const Sidebar = () => {
     { icon: Users, label: "Employees", path: "/employees" },
     { icon: CalendarCheck, label: "Attendance", path: "/attendance" },
     { icon: DoorOpen, label: "Leave", path: "/leave" },
-    { icon: Settings, label: "Settings", path: "/settings" },
+    { icon: Settings, label: "Departments", path: "/departments" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
   ];
 
