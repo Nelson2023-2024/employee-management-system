@@ -1,7 +1,23 @@
 // src/pages/employees/EmployeesPage.jsx
 import React, { useState } from "react";
-import { Input } from "../../components/ui/input"; // Assuming you have shadcn/ui Input
-import { Button } from "../../components/ui/button"; // Assuming you have shadcn/ui Button
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Label } from "../../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -9,15 +25,196 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table"; // Assuming you have shadcn/ui Table components
+} from "../../components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu"; // Assuming shadcn/ui DropdownMenu
-import { ChevronDown, MoreHorizontal } from "lucide-react"; // Assuming you have lucide-react icons
-import { useGetAllEmployees } from "../../hooks/useEmployees";
+} from "../../components/ui/dropdown-menu";
+import { ChevronDown, MoreHorizontal, Plus, Loader2, Users } from "lucide-react";
+import { useGetAllEmployees, useCreateEmployee } from "../../hooks/useEmployees.js";
+import { useDepartments } from "../../hooks/useDepartments";
+import { useAuth } from "../../hooks/useAuth";
+
+// Create Employee Dialog Component
+const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
+  const [formData, setFormData] = useState({
+    email: "",
+    fullName: "",
+    password: "",
+    phoneNumber: "",
+    position: "",
+    departmentName: "",
+  });
+
+  const { createEmployee, isLoading } = useCreateEmployee();
+  const { data: departmentsData } = useDepartments();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Validate all fields
+    const requiredFields = ['email', 'fullName', 'password', 'phoneNumber', 'position', 'departmentName'];
+    const missingFields = requiredFields.filter(field => !formData[field].trim());
+    
+    if (missingFields.length > 0) {
+      return;
+    }
+
+    createEmployee(formData, {
+      onSuccess: () => {
+        setFormData({
+          email: "",
+          fullName: "",
+          password: "",
+          phoneNumber: "",
+          position: "",
+          departmentName: "",
+        });
+        onOpenChange(false);
+      },
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleDepartmentChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      departmentName: value
+    }));
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add New Employee</DialogTitle>
+          <DialogDescription>
+            Register a new employee in your organization.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                name="fullName"
+                placeholder="John Doe"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="john.doe@company.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                name="phoneNumber"
+                placeholder="+1234567890"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="position">Position</Label>
+              <Input
+                id="position"
+                name="position"
+                placeholder="Software Engineer"
+                value={formData.position}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select value={formData.departmentName} onValueChange={handleDepartmentChange} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departmentsData?.departments?.map((dept) => (
+                    <SelectItem key={dept._id} value={dept.name}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Employee
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 // Skeleton Component for Loading State
 const EmployeesTableSkeleton = () => {
@@ -25,21 +222,19 @@ const EmployeesTableSkeleton = () => {
     <div className="p-6">
       {/* Header Section Skeleton */}
       <div className="flex justify-between items-center mb-6">
-        <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+        <div>
+          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse mb-2"></div>
+          <div className="h-5 bg-gray-200 rounded w-64 animate-pulse"></div>
+        </div>
         <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
       </div>
 
       {/* Search and Filter Section Skeleton */}
       <div className="flex gap-4 mb-6">
-        {/* Search Input Skeleton */}
         <div className="relative flex-1">
           <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
         </div>
-
-        {/* Department Filter Skeleton */}
         <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-
-        {/* Status Filter Skeleton */}
         <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
       </div>
 
@@ -66,10 +261,8 @@ const EmployeesTableSkeleton = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Generate 8 skeleton rows */}
             {Array.from({ length: 8 }).map((_, index) => (
               <TableRow key={index}>
-                {/* Name Column Skeleton */}
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse"></div>
@@ -79,23 +272,15 @@ const EmployeesTableSkeleton = () => {
                     </div>
                   </div>
                 </TableCell>
-                
-                {/* Department Column Skeleton */}
                 <TableCell>
                   <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
                 </TableCell>
-                
-                {/* Position Column Skeleton */}
                 <TableCell>
                   <div className="h-4 bg-gray-200 rounded w-28 animate-pulse"></div>
                 </TableCell>
-                
-                {/* Status Column Skeleton */}
                 <TableCell>
                   <div className="h-6 bg-gray-200 rounded-full w-16 animate-pulse"></div>
                 </TableCell>
-                
-                {/* Actions Column Skeleton */}
                 <TableCell>
                   <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
                 </TableCell>
@@ -110,9 +295,13 @@ const EmployeesTableSkeleton = () => {
 
 const EmployeesPage = () => {
   const { employees, isLoading, isError, error } = useGetAllEmployees();
+  const { data: authUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const isAdmin = authUser?.role === "admin";
 
   if (isLoading) {
     return <EmployeesTableSkeleton />;
@@ -151,11 +340,25 @@ const EmployeesPage = () => {
 
   return (
     <div className="p-6">
+      {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Employee Management</h1>
-        <Button className="flex items-center gap-2">
-          <span className="text-xl">+</span> Add Employee
-        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Employee Management</h1>
+          <p className="text-muted-foreground mt-2 flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            <span>{employees.length} employees in your organization</span>
+          </p>
+        </div>
+
+        {isAdmin && (
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Employee
+          </Button>
+        )}
       </div>
 
       {/* Search and Filter Section */}
@@ -287,14 +490,35 @@ const EmployeesPage = () => {
             ))}
             {filteredEmployees.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-4 text-gray-500">
-                  No employees found.
+                <TableCell colSpan={5} className="text-center py-8">
+                  <div className="text-gray-500">
+                    {searchTerm || selectedDepartment !== "All" || selectedStatus !== "All" 
+                      ? "No employees found matching your criteria." 
+                      : "No employees yet."
+                    }
+                  </div>
+                  {isAdmin && !searchTerm && selectedDepartment === "All" && selectedStatus === "All" && (
+                    <Button 
+                      onClick={() => setIsCreateDialogOpen(true)}
+                      className="mt-4"
+                      variant="outline"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Employee
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Create Employee Dialog */}
+      <CreateEmployeeDialog 
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 // src/hooks/useGetAllEmployees.js
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 export function useGetAllEmployees() {
@@ -39,4 +39,40 @@ export function useGetAllEmployees() {
   });
 
   return { employees, isLoading, isError, error };
+}
+
+// Hook for creating a new employee
+export function useCreateEmployee() {
+  const queryClient = useQueryClient();
+
+  const { mutate: createEmployee, isLoading } = useMutation({
+    mutationFn: async (employeeData) => {
+      const res = await fetch(
+        "http://localhost:5005/api/admin-mangage-employee/register-employee",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(employeeData),
+          credentials: "include",
+        }
+      );
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create employee");
+      }
+      return data;
+    },
+    onSuccess: (payload) => {
+      queryClient.invalidateQueries(["employees"]);
+      toast.success(payload.message || "Employee created successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Could not create employee");
+    },
+  });
+
+  return { createEmployee, isLoading };
 }
