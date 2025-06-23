@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { Department } from "../models/Department.model.js";
 import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
+import { User } from "../models/User.model.js"; // Make sure User is imported
 
 const router = Router();
 
@@ -54,34 +55,24 @@ router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const department = await Department.findByIdAndDelete(id);
+    // 1. Find the department first to ensure it exists
+    const departmentToDelete = await Department.findById(id);
 
-    if (!department) {
+    if (!departmentToDelete) {
       return res.status(404).json({ message: "Department not found" });
     }
 
-    const promises = [
-      // Update all users in this department to set their department to null
-      User.updateMany({ department: id }, { $set: { department: null } }),
-      // Delete the department
-      Department.findByIdAndDelete(id),
-    ];
+    // 2. Update all users in this department to set their department to null
+    // This should happen *before* deleting the department itself
+    await User.updateMany({ department: id }, { $set: { department: null } });
 
-    // Execute both promises concurrently
-    const [usersUpdated, departmentDeleted] = await Promise.all(promises);
-
-    if (!departmentDeleted) {
-      // This condition might be redundant since we already checked if the department exists initially
-      // However, it adds an extra layer of safety in case of unexpected issues during the promise execution.
-      return res
-        .status(404)
-        .json({ message: "Department not found (after attempting deletion)" });
-    }
+    // 3. Now, delete the department
+    await Department.findByIdAndDelete(id);
 
     res.status(200).json({ message: "Department deleted successfully" });
   } catch (error) {
     console.log(
-      "An Error occured in the delete department route:",
+      "An Error occurred in the delete department route:",
       error.message
     );
     res
@@ -89,4 +80,5 @@ router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 });
+
 export { router as departmentRoutes };
