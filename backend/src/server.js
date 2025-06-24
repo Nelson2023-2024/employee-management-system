@@ -11,6 +11,7 @@ import { leaveRoutes } from "./routes/leave.route.js";
 import { attendanceRoutes } from "./routes/attendance.route.js";
 import path from 'path';
 import { adminDashboardRoute } from "./routes/admin.dashboard.route.js";
+import { notificationRoutes } from "./routes/notifications.route.js";
 configDotenv()
 
 const PORT = process.env.PORT || 5005
@@ -32,6 +33,7 @@ app.use("/api/admin-mangage-leave", adminLeaveRoutes)
 app.use("/api/admin-dashboard", adminDashboardRoute)
 app.use("/api/leave", leaveRoutes)
 app.use("/api/attendance", attendanceRoutes)
+app.use("/api/notifications", notificationRoutes)
 
 app.use(
   '/exports',
