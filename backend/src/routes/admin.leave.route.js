@@ -3,139 +3,141 @@ import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 import { LeaveType } from "../models/LeaveType.model.js";
 import { User } from "../models/User.model.js";
 import { LeaveRequest } from "../models/LeaveRequest.model.js";
+import { Notification } from "../models/Notifications.model.js";
 
 const router = Router();
-
 router.use(protectRoute, adminRoute);
 
+/**
+ * GET /admin/leave
+ * List all leave requests (for admin dashboard)
+ */
 router.get("/", async (req, res) => {
   try {
-    // Fetch all leave requests
     const leaveRequests = await LeaveRequest.find({})
       .populate({
-        path: "employee", // Populate the employee field
-        select: "fullName email position department", // Select desired fields from User model
-        populate: {
-          path: "department", // Populate the department field within the employee
-          select: "name", // Select desired fields from Department model (e.g., 'name')
-        },
+        path: "employee",
+        select: "fullName email position department",
+        populate: { path: "department", select: "name" },
       })
-      .populate("leaveType", "name description maxDays") // Populate the leaveType field
-      .sort({ createdAt: -1 }); // Sort by creation date, newest first
+      .populate("leaveType", "name description maxDays")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({ leaveRequests });
   } catch (error) {
-    console.log(
-      "An error occurred in the admin-get-all-leave-requests route:",
-      error.message
-    );
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("Admin-get-all-leave-requests error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
 
-//create a leave
+/**
+ * POST /admin/leave
+ * Create a new leave type
+ */
 router.post("/", async (req, res) => {
   try {
-    const { name, description, maxDays } = req.body;
+    const { name, description, maxDays, requiresApproval = true } = req.body;
 
-    if (!name || !description || !maxDays)
+    if (!name || !description || !maxDays) {
       return res.status(400).json({ message: "All fields are required" });
+    }
 
-    const leaveExist = await LeaveType.findOne({ name });
-    if (leaveExist)
+    if (await LeaveType.findOne({ name })) {
       return res.status(400).json({ message: "Leave already exists" });
+    }
 
-    //if the leave doesn't exist
-    const leave = await LeaveType.create({
-      name,
-      description,
-      maxDays,
+    const leave = await LeaveType.create({ name, description, maxDays, requiresApproval });
+
+    // Notify admin
+    await Notification.create({
+      recipient: req.user._id,
+      sender:    null,
+      title:     "Leave Type Created",
+      message:   `Leave type “${leave.name}” (${leave.maxDays} days) was created.`,
+      type:      "system",
     });
 
-    res.status(201).json({ message: "Leave Created successfully", leave });
+    res.status(201).json({ message: "Leave created successfully", leave });
   } catch (error) {
-    console.log(
-      "An error occurred in the create-leave-route route:",
-      error.message
-    );
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("Create-leave-route error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
 
-//delete a leave
-router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
+/**
+ * DELETE /admin/leave/:id
+ * Delete a leave type (and unlink from users)
+ */
+router.delete("/:id", async (req, res) => {
   try {
     const { id: leaveId } = req.params;
-    // First, check if the leave type exists
     const leaveType = await LeaveType.findById(leaveId);
     if (!leaveType) {
       return res.status(404).json({ message: "Leave type not found" });
     }
 
-    await User.updateMany(
-      { leaveType: leaveId },
-      { $set: { leaveType: null } }
-    );
+    // Unlink users who had this leaveType
+    await User.updateMany({ leaveType: leaveId }, { $set: { leaveType: null } });
 
-    //  Delete the LeaveType
-    const deletedLeaveType = await LeaveType.findByIdAndDelete(leaveId);
-    if (!deletedLeaveType) {
-      return res.status(404).json({ message: "Leave type not found" });
-    }
+    // Delete it
+    await LeaveType.findByIdAndDelete(leaveId);
+
+    // Notify admin
+    await Notification.create({
+      recipient: req.user._id,
+      sender:    null,
+      title:     "Leave Type Deleted",
+      message:   `Leave type “${leaveType.name}” was deleted.`,
+      type:      "system",
+    });
+
     res.status(200).json({ message: "Leave type deleted successfully" });
   } catch (error) {
-    console.log("An Error occured in the delete-leave route:", error.message);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("Delete-leave-route error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
 
-// Add this route to adminLeaveRoutes.js
+/**
+ * PATCH /admin/leave/toggle-leave/:id
+ * Approve or reject a leave request
+ */
 router.patch("/toggle-leave/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const adminId = req.user._id;
 
-    // Find the leave request and determine new status
-    const leaveRequest = await LeaveRequest.findOne({
-      _id: id,
-      status: { $in: ["Approved", "Pending", "Rejected"] },
-    });
-
+    const leaveRequest = await LeaveRequest.findById(id).populate("employee", "fullName");
     if (!leaveRequest) {
       return res.status(404).json({ message: "Leave request not found" });
     }
 
-    // Toggle logic
-    const newStatus =
-      leaveRequest.status === "Approved" ? "Rejected" : "Approved";
+    // Determine new status
+    const newStatus = leaveRequest.status === "Approved" ? "Rejected" : "Approved";
+    const approvedDate = newStatus === "Approved" ? new Date() : null;
 
-    const update = {
-      status: newStatus,
-      approver: adminId,
-      approvedDate: newStatus === "Approved" ? new Date() : null,
-    };
+    const updatedRequest = await LeaveRequest.findByIdAndUpdate(
+      id,
+      { status: newStatus, approver: adminId, approvedDate },
+      { new: true }
+    ).populate("employee", "fullName email");
 
-    // Atomic update
-    const updatedRequest = await LeaveRequest.findByIdAndUpdate(id, update, {
-      new: true,
-    }).populate("employee", "fullName email");
+    // Notify the employee about approval/rejection
+    await Notification.create({
+      recipient: updatedRequest.employee._id,
+      sender:    adminId,
+      title:     `Leave ${newStatus}`,
+      message:   `Your leave request (${updatedRequest.leaveType}) has been ${newStatus.toLowerCase()}.`,
+      type:      "leave",
+    });
 
     res.status(200).json({
       message: `Leave ${newStatus.toLowerCase()} successfully`,
-      leave: updatedRequest,
+      leave:   updatedRequest,
     });
   } catch (error) {
-    console.error("Toggle error:", error.message);
-    res.status(500).json({
-      message: "Failed to toggle leave status",
-      error: error.message,
-    });
+    console.error("Toggle-leave error:", error.message);
+    res.status(500).json({ message: "Failed to toggle leave status", error: error.message });
   }
 });
 
