@@ -1,11 +1,12 @@
 import { useTheme } from "../../components/theme-provider";
 import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { useLogout } from "../../hooks/useLogout";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "../ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { Badge } from "../ui/badge";
 
 // Import icons from Lucide React instead of various sources
 import { 
@@ -19,9 +20,14 @@ import {
   Bell
 } from "lucide-react";
 
+// Import the notification hook
+import { useUnreadNotificationCount } from "../../hooks/useNotifications";
+
 const Sidebar = () => {
   const { setTheme, theme } = useTheme();
   const { logout, isLoading } = useLogout();
+  const location = useLocation();
+  const unreadCount = useUnreadNotificationCount();
 
   // Get auth user data
   const { data: authUser } = useQuery({
@@ -36,13 +42,47 @@ const Sidebar = () => {
 
   // Navigation items
   const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/", active: true },
-    { icon: Users, label: "Employees", path: "/employees" },
-    { icon: CalendarCheck, label: "Attendance", path: "/attendance" },
-    { icon: DoorOpen, label: "Leave", path: "/leave" },
-    { icon: Settings, label: "Departments", path: "/departments" },
-    { icon: Bell, label: "Notifications", path: "/notifications" },
+    { 
+      icon: LayoutDashboard, 
+      label: "Dashboard", 
+      path: "/", 
+      exact: true 
+    },
+    { 
+      icon: Users, 
+      label: "Employees", 
+      path: "/employees" 
+    },
+    { 
+      icon: CalendarCheck, 
+      label: "Attendance", 
+      path: "/attendance" 
+    },
+    { 
+      icon: DoorOpen, 
+      label: "Leave", 
+      path: "/leave" 
+    },
+    { 
+      icon: Settings, 
+      label: "Departments", 
+      path: "/departments" 
+    },
+    { 
+      icon: Bell, 
+      label: "Notifications", 
+      path: "/notifications",
+      badge: unreadCount > 0 ? unreadCount : null
+    },
   ];
+
+  // Function to check if a nav item is active
+  const isActive = (item) => {
+    if (item.exact) {
+      return location.pathname === item.path;
+    }
+    return location.pathname.startsWith(item.path);
+  };
 
   return (
     <div className="bg-background w-64 h-screen flex-shrink-0 border-r border-border">
@@ -57,22 +97,35 @@ const Sidebar = () => {
         {/* Navigation */}
         <nav className="flex-1">
           <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium",
-                    item.active 
-                      ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-accent text-foreground hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </Link>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              const active = isActive(item);
+              return (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium relative",
+                      active 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent text-foreground hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span className="flex-1">{item.label}</span>
+                    
+                    {/* Notification Badge */}
+                    {item.badge && (
+                      <Badge 
+                        variant={active ? "secondary" : "destructive"}
+                        className="ml-auto text-xs min-w-[1.25rem] h-5 flex items-center justify-center p-0"
+                      >
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
@@ -112,6 +165,9 @@ const Sidebar = () => {
                 <span className="text-sm font-medium">
                   {authUser?.fullName || "Admin"}
                 </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {authUser?.role || "User"}
+                </span>
               </div>
             </Link>
           )}
@@ -124,7 +180,7 @@ const Sidebar = () => {
             disabled={isLoading}
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Logout
+            {isLoading ? "Logging out..." : "Logout"}
           </Button>
         </div>
       </div>
