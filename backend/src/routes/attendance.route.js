@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 import { Attendance } from "../models/Attendance.model.js";
+import { Notification } from "../models/Notifications.model.js";
 import converter from 'json-2-csv';
 import ExcelJS from 'exceljs';
 import path from 'path';
@@ -27,6 +28,17 @@ router.post("/", async (req, res) => {
       { $set: { status } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+
+    // create a notification for this user
+    const notification = await Notification.create({
+      recipient: employeeId,        // notify the employee
+      sender:    null,              // system‐generated
+      title:     "Attendance Recorded",
+      message:   `Your attendance for ${dateOnly.toDateString()} has been marked as "${status}".`,
+      type:      "attendance",
+    });
+
+    if(notification) console.log("Attendance notification Created successfully", notification)
 
     res.status(200).json({
       message: `Attendance marked as ${status}`,
