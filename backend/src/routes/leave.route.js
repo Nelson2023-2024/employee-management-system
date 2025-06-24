@@ -2,6 +2,7 @@ import { Router } from "express";
 import { LeaveType } from "../models/LeaveType.model.js";
 import { User } from "../models/User.model.js";
 import { LeaveRequest } from "../models/LeaveRequest.model.js";
+import { Notification } from "../models/Notifications.model.js";
 import { protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
@@ -34,52 +35,64 @@ router.post("/:leaveTypeId", async (req, res) => {
     const { leaveTypeId } = req.params;
     const employeeId = req.user._id;
 
-    // Check for existing leave request
-    const existingRequest = await LeaveRequest.findOne({
+    // 1) check for an existing pending/approved request, and populate the leaveType
+    const existing = await LeaveRequest.findOne({
       employee: employeeId,
       leaveType: leaveTypeId,
-      status: { $in: ["Pending", "Approved"] }
-    });
+      status: { $in: ["Pending", "Approved"] },
+    }).populate("leaveType", "name maxDays");
 
-    // If exists - remove it (toggle off)
-    if (existingRequest) {
-      await LeaveRequest.findByIdAndDelete(existingRequest._id);
+    if (existing) {
+      // — CANCEL toggle —
+      await LeaveRequest.findByIdAndDelete(existing._id);
+
+      // notify the user, using the populated name
+      await Notification.create({
+        recipient: employeeId,
+        sender:    null,
+        title:     "Leave Cancelled",
+        message:   `Your ${existing.numberOfDays}-day ${existing.leaveType.name} leave starting ${existing.startDate.toDateString()} was cancelled.`,
+        type:      "leave",
+      });
+
       return res.status(200).json({
-        message: "Leave request removed",
-        action: "removed",
-        requestId: existingRequest._id
+        message:   "Leave request removed",
+        action:    "removed",
+        requestId: existing._id,
       });
     }
 
-    // If doesn't exist - create new (toggle on)
+    // 2) no existing → CREATE new
+    // fetch & validate employee
     const employee = await User.findById(employeeId);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
-    if (employee.employeeStatus !== "Active") {
+    if (employee.employeeStatus !== "Active")
       return res.status(403).json({ message: "Not eligible for leave" });
-    }
 
+    // fetch & validate leaveType
     const leaveType = await LeaveType.findById(leaveTypeId);
     if (!leaveType) return res.status(404).json({ message: "Leave type not found" });
-    if (leaveType.maxDays < 1) {
+    if (leaveType.maxDays < 1)
       return res.status(400).json({ message: "Invalid leave configuration" });
-    }
 
+    // compute dates
     const startDate = new Date();
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + (leaveType.maxDays - 1));
 
+    // build request
     const newRequest = await LeaveRequest.create({
-      employee: employeeId,
-      leaveType: leaveTypeId,
+      employee:      employeeId,
+      leaveType:     leaveTypeId,
       startDate,
       endDate,
-      numberOfDays: leaveType.maxDays,
-      status: leaveType.requiresApproval ? "Pending" : "Approved",
-      approvedDate: leaveType.requiresApproval ? null : new Date(),
+      numberOfDays:  leaveType.maxDays,
+      status:        leaveType.requiresApproval ? "Pending" : "Approved",
+      approvedDate:  leaveType.requiresApproval ? null : new Date(),
     });
 
-    // Handle auto-approval
+    // auto‐approval: tag system as approver
     if (!leaveType.requiresApproval) {
       const systemUser = await User.findOne({ email: "system@company.com" });
       if (systemUser) {
@@ -88,19 +101,44 @@ router.post("/:leaveTypeId", async (req, res) => {
       }
     }
 
-    res.status(201).json({
-      message: leaveType.requiresApproval 
-        ? "Leave request submitted for approval" 
-        : "Leave automatically approved",
-      action: "created",
-      request: newRequest
+    // — NOTIFY EMPLOYEE —
+    await Notification.create({
+      recipient: employeeId,
+      sender:    null,
+      title:     leaveType.requiresApproval
+        ? "Leave Requested"
+        : "Leave Approved",
+      message:   leaveType.requiresApproval
+        ? `Your request for ${leaveType.maxDays} day(s) of ${leaveType.name} leave (from ${startDate.toDateString()}) is pending approval.`
+        : `Your ${leaveType.maxDays} day(s) of ${leaveType.name} leave (from ${startDate.toDateString()}) has been auto-approved.`,
+      type:      "leave",
     });
 
+    // — NOTIFY MANAGERS if approval needed —
+    if (leaveType.requiresApproval) {
+      const managers = await User.find({ role: "manager" }, "_id");
+      const managerNotifs = managers.map((m) => ({
+        recipient:  m._id,
+        sender:     employeeId,
+        title:      "Leave Approval Needed",
+        message:    `${employee.name} has requested ${leaveType.maxDays} day(s) of ${leaveType.name} leave.`,
+        type:       "leave",
+      }));
+      await Notification.insertMany(managerNotifs);
+    }
+
+    res.status(201).json({
+      message: leaveType.requiresApproval
+        ? "Leave request submitted for approval"
+        : "Leave automatically approved",
+      action: "created",
+      request: newRequest,
+    });
   } catch (error) {
-    console.error("Leave error:", error.message);
-    res.status(500).json({ 
-      message: "Leave operation failed", 
-      error: error.message 
+    console.error("Leave error:", error);
+    res.status(500).json({
+      message: "Leave operation failed",
+      error: error.message,
     });
   }
 });
