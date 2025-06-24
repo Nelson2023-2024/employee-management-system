@@ -5,7 +5,7 @@ import { User } from "../models/User.model.js"; // Make sure User is imported
 
 const router = Router();
 
-router.get("/", protectRoute, adminRoute, async (req, res) => {
+router.get("/", protectRoute, async (req, res) => {
   try {
     console.log("Req.user:", req.user);
 
