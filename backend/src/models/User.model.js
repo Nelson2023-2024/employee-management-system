@@ -45,10 +45,21 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     leaveType: {
-      // Added leaveType field
       type: mongoose.Schema.Types.ObjectId,
       ref: "LeaveType",
-      default: null, //  Important:  Initialize to null
+      default: null,
+    },
+    // NEW: Basic salary field
+    basicSalary: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    // NEW: Bank details for salary processing
+    bankDetails: {
+      bankName: { type: String, default: "" },
+      accountNumber: { type: String, default: "" },
+      branchCode: { type: String, default: "" },
     },
   },
   { timestamps: true }

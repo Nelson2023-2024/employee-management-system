@@ -17,7 +17,8 @@ import {
   Settings, 
   LogOut, 
   DoorOpen,
-  Bell
+  Bell,
+  HousePlug
 } from "lucide-react";
 
 // Import the notification hook
@@ -64,9 +65,15 @@ const Sidebar = () => {
       path: "/leave" 
     },
     { 
-      icon: Settings, 
+      icon: HousePlug, 
       label: "Departments", 
       path: "/departments" 
+    },
+    { 
+      icon: DollarSign, 
+      label: "Payroll processing", 
+      path: "/payroll",
+      badge: unreadCount > 0 ? unreadCount : null
     },
     { 
       icon: Bell, 
