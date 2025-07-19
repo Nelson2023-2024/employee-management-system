@@ -73,7 +73,6 @@ const Sidebar = () => {
       icon: DollarSign, 
       label: "Payroll processing", 
       path: "/payroll",
-      badge: unreadCount > 0 ? unreadCount : null
     },
     { 
       icon: Bell, 
