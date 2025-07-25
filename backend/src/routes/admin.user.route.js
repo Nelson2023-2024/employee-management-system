@@ -20,6 +20,7 @@ router.post(
         phoneNumber,
         position,
         departmentName,
+        basicSalary
       } = req.body;
 
       if (
@@ -28,7 +29,8 @@ router.post(
         !password ||
         !phoneNumber ||
         !position ||
-        !departmentName
+        !departmentName ||
+        basicSalary === undefined
       ) {
         return res.status(400).json({ message: "All fields are required" });
       }
@@ -50,6 +52,7 @@ router.post(
         position,
         department: department._id,
         password: hashed,
+        basicSalary
       });
 
       // Add to department.employees
