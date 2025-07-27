@@ -1,298 +1,144 @@
 import { Router } from "express";
+import { adminRoute, protectRoute } from "../middleware/protectRoute.js";
 import { LeaveType } from "../models/LeaveType.model.js";
 import { User } from "../models/User.model.js";
 import { LeaveRequest } from "../models/LeaveRequest.model.js";
 import { Notification } from "../models/Notifications.model.js";
-import { protectRoute,adminRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
+router.use(protectRoute, adminRoute);
 
-router.use(protectRoute);
-
-// 🔥 NEW: Fetch all leave types
+/**
+ * GET /admin/leave
+ * List all leave requests (for admin dashboard)
+ */
 router.get("/", async (req, res) => {
   try {
-    const leaveTypes = await LeaveType.find({})
-      .sort({ name: 1 }); // optional: alphabetical
+    const leaveRequests = await LeaveRequest.find({})
+      .populate({
+        path: "employee",
+        select: "fullName email position department",
+        populate: { path: "department", select: "name" },
+      })
+      .populate("leaveType", "name description maxDays")
+      .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      message: "All leave types retrieved successfully",
-      count: leaveTypes.length,
-      leaveTypes,
-    });
+    res.status(200).json({ leaveRequests });
   } catch (error) {
-    console.error("Get-leaveTypes error:", error.message);
-    res.status(500).json({
-      message: "Failed to retrieve leave types",
-      error: error.message,
-    });
+    console.error("Admin-get-all-leave-requests error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
 
-router.post("/:leaveTypeId", async (req, res) => {
+/**
+ * POST /admin/leave
+ * Create a new leave type
+ */
+router.post("/", async (req, res) => {
   try {
-    const { leaveTypeId } = req.params;
-    const employeeId = req.user._id;
+    const { name, description, maxDays, requiresApproval = true } = req.body;
 
-    // 1) check for an existing pending/approved request, and populate the leaveType
-    const existing = await LeaveRequest.findOne({
-      employee: employeeId,
-      leaveType: leaveTypeId,
-      status: { $in: ["Pending", "Approved"] },
-    }).populate("leaveType", "name maxDays");
-
-    if (existing) {
-      // — CANCEL toggle —
-      await LeaveRequest.findByIdAndDelete(existing._id);
-
-      // notify the user, using the populated name
-      await Notification.create({
-        recipient: employeeId,
-        sender:    null,
-        title:     "Leave Cancelled",
-        message:   `Your ${existing.numberOfDays}-day ${existing.leaveType.name} leave starting ${existing.startDate.toDateString()} was cancelled.`,
-        type:      "leave",
-      });
-
-      return res.status(200).json({
-        message:   "Leave request removed",
-        action:    "removed",
-        requestId: existing._id,
-      });
+    if (!name || !description || !maxDays) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    // 2) no existing → CREATE new
-    // fetch & validate employee
-    const employee = await User.findById(employeeId);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
-    if (employee.employeeStatus !== "Active")
-      return res.status(403).json({ message: "Not eligible for leave" });
+    if (await LeaveType.findOne({ name })) {
+      return res.status(400).json({ message: "Leave already exists" });
+    }
 
-    // fetch & validate leaveType
-    const leaveType = await LeaveType.findById(leaveTypeId);
-    if (!leaveType) return res.status(404).json({ message: "Leave type not found" });
-    if (leaveType.maxDays < 1)
-      return res.status(400).json({ message: "Invalid leave configuration" });
+    const leave = await LeaveType.create({ name, description, maxDays, requiresApproval });
 
-    // compute dates
-    const startDate = new Date();
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + (leaveType.maxDays - 1));
-
-    // build request
-    const newRequest = await LeaveRequest.create({
-      employee:      employeeId,
-      leaveType:     leaveTypeId,
-      startDate,
-      endDate,
-      numberOfDays:  leaveType.maxDays,
-      status:        leaveType.requiresApproval ? "Pending" : "Approved",
-      approvedDate:  leaveType.requiresApproval ? null : new Date(),
+    // Notify admin
+    await Notification.create({
+      recipient: req.user._id,
+      sender:    null,
+      title:     "Leave Type Created",
+      message:   `Leave type “${leave.name}” (${leave.maxDays} days) was created.`,
+      type:      "system",
     });
 
-    // auto‐approval: tag system as approver
-    if (!leaveType.requiresApproval) {
-      const systemUser = await User.findOne({ email: "system@company.com" });
-      if (systemUser) {
-        newRequest.approver = systemUser._id;
-        await newRequest.save();
-      }
+    res.status(201).json({ message: "Leave created successfully", leave });
+  } catch (error) {
+    console.error("Create-leave-route error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+});
+
+/**
+ * DELETE /admin/leave/:id
+ * Delete a leave type (and unlink from users)
+ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id: leaveId } = req.params;
+    const leaveType = await LeaveType.findById(leaveId);
+    if (!leaveType) {
+      return res.status(404).json({ message: "Leave type not found" });
     }
 
-    // — NOTIFY EMPLOYEE —
+    // Unlink users who had this leaveType
+    await User.updateMany({ leaveType: leaveId }, { $set: { leaveType: null } });
+
+    // Delete it
+    await LeaveType.findByIdAndDelete(leaveId);
+
+    // Notify admin
     await Notification.create({
-      recipient: employeeId,
+      recipient: req.user._id,
       sender:    null,
-      title:     leaveType.requiresApproval
-        ? "Leave Requested"
-        : "Leave Approved",
-      message:   leaveType.requiresApproval
-        ? `Your request for ${leaveType.maxDays} day(s) of ${leaveType.name} leave (from ${startDate.toDateString()}) is pending approval.`
-        : `Your ${leaveType.maxDays} day(s) of ${leaveType.name} leave (from ${startDate.toDateString()}) has been auto-approved.`,
+      title:     "Leave Type Deleted",
+      message:   `Leave type “${leaveType.name}” was deleted.`,
+      type:      "system",
+    });
+
+    res.status(200).json({ message: "Leave type deleted successfully" });
+  } catch (error) {
+    console.error("Delete-leave-route error:", error.message);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+});
+
+/**
+ * PATCH /admin/leave/toggle-leave/:id
+ * Approve or reject a leave request
+ */
+router.patch("/toggle-leave/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user._id;
+
+    const leaveRequest = await LeaveRequest.findById(id).populate("employee", "fullName");
+    if (!leaveRequest) {
+      return res.status(404).json({ message: "Leave request not found" });
+    }
+
+    // Determine new status
+    const newStatus = leaveRequest.status === "Approved" ? "Rejected" : "Approved";
+    const approvedDate = newStatus === "Approved" ? new Date() : null;
+
+    const updatedRequest = await LeaveRequest.findByIdAndUpdate(
+      id,
+      { status: newStatus, approver: adminId, approvedDate },
+      { new: true }
+    ).populate("employee", "fullName email");
+
+    // Notify the employee about approval/rejection
+    await Notification.create({
+      recipient: updatedRequest.employee._id,
+      sender:    adminId,
+      title:     `Leave ${newStatus}`,
+      message:   `Your leave request (${updatedRequest.leaveType}) has been ${newStatus.toLowerCase()}.`,
       type:      "leave",
     });
 
-    // — NOTIFY MANAGERS if approval needed —
-    if (leaveType.requiresApproval) {
-      const managers = await User.find({ role: "manager" }, "_id");
-      const managerNotifs = managers.map((m) => ({
-        recipient:  m._id,
-        sender:     employeeId,
-        title:      "Leave Approval Needed",
-        message:    `${employee.name} has requested ${leaveType.maxDays} day(s) of ${leaveType.name} leave.`,
-        type:       "leave",
-      }));
-      await Notification.insertMany(managerNotifs);
-    }
-
-    res.status(201).json({
-      message: leaveType.requiresApproval
-        ? "Leave request submitted for approval"
-        : "Leave automatically approved",
-      action: "created",
-      request: newRequest,
-    });
-  } catch (error) {
-    console.error("Leave error:", error);
-    res.status(500).json({
-      message: "Leave operation failed",
-      error: error.message,
-    });
-  }
-});
-
-router.get("/my-leaves", async (req, res) => {
-    try {
-      const leaves = await LeaveRequest.find({ employee: req.user._id })
-        .populate("leaveType", "name description maxDays")
-        .populate("approver", "fullName email")
-        .sort({ createdAt: -1 });
-  
-      res.status(200).json({
-        message: "Leave requests retrieved successfully",
-        count: leaves.length,
-        leaves,
-      });
-    } catch (error) {
-      console.error("Get leaves error:", error.message);
-      res.status(500).json({
-        message: "Failed to retrieve leave requests",
-        error: error.message,
-      });
-    }
-  });
-
-  router.get("/my-requests", async (req, res) => {
-    try {
-      const leaveRequests = await LeaveRequest.find({
-        employee: req.user._id
-      })
-      .populate('leaveType')
-      .sort({ createdAt: -1 });
-  
-      res.status(200).json({
-        success: true,
-        count: leaveRequests.length,
-        leaveRequests
-      });
-    } catch (error) {
-      console.error("Error fetching leave requests:", error);
-      res.status(500).json({
-        message: "Failed to fetch leave requests",
-        error: error.message
-      });
-    }
-  });
-
-// 🔥 NEW ADMIN ENDPOINTS
-
-// Approve leave request (Admin only)
-router.patch("/approve/:requestId", adminRoute, async (req, res) => {
-  try {
-    const { requestId } = req.params;
-    const approverId = req.user._id;
-
-    // Find the leave request
-    const leaveRequest = await LeaveRequest.findById(requestId)
-      .populate("employee", "fullName email")
-      .populate("leaveType", "name maxDays");
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "Leave request not found" });
-    }
-
-    // Check if request is still pending
-    if (leaveRequest.status !== "Pending") {
-      return res.status(400).json({ 
-        message: `Leave request is already ${leaveRequest.status.toLowerCase()}` 
-      });
-    }
-
-    // Update the leave request
-    leaveRequest.status = "Approved";
-    leaveRequest.approver = approverId;
-    leaveRequest.approvedDate = new Date();
-    await leaveRequest.save();
-
-    // Notify the employee
-    await Notification.create({
-      recipient: leaveRequest.employee._id,
-      sender: approverId,
-      title: "Leave Request Approved",
-      message: `Your ${leaveRequest.numberOfDays} day(s) ${leaveRequest.leaveType.name} leave request starting ${leaveRequest.startDate.toDateString()} has been approved.`,
-      type: "leave",
-    });
-
     res.status(200).json({
-      message: "Leave request approved successfully",
-      leaveRequest,
+      message: `Leave ${newStatus.toLowerCase()} successfully`,
+      leave:   updatedRequest,
     });
   } catch (error) {
-    console.error("Approve leave error:", error);
-    res.status(500).json({
-      message: "Failed to approve leave request",
-      error: error.message,
-    });
+    console.error("Toggle-leave error:", error.message);
+    res.status(500).json({ message: "Failed to toggle leave status", error: error.message });
   }
 });
 
-// Reject leave request (Admin only)
-router.patch("/reject/:requestId", adminRoute, async (req, res) => {
-  try {
-    const { requestId } = req.params;
-    const { reason } = req.body; // Optional rejection reason
-    const rejectedBy = req.user._id;
-
-    // Find the leave request
-    const leaveRequest = await LeaveRequest.findById(requestId)
-      .populate("employee", "fullName email")
-      .populate("leaveType", "name maxDays");
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "Leave request not found" });
-    }
-
-    // Check if request is still pending
-    if (leaveRequest.status !== "Pending") {
-      return res.status(400).json({ 
-        message: `Leave request is already ${leaveRequest.status.toLowerCase()}` 
-      });
-    }
-
-    // Update the leave request
-    leaveRequest.status = "Rejected";
-    leaveRequest.approver = rejectedBy;
-    leaveRequest.rejectedDate = new Date();
-    if (reason) {
-      leaveRequest.rejectionReason = reason;
-    }
-    await leaveRequest.save();
-
-    // Notify the employee
-    const rejectionMessage = reason 
-      ? `Your ${leaveRequest.numberOfDays} day(s) ${leaveRequest.leaveType.name} leave request starting ${leaveRequest.startDate.toDateString()} has been rejected. Reason: ${reason}`
-      : `Your ${leaveRequest.numberOfDays} day(s) ${leaveRequest.leaveType.name} leave request starting ${leaveRequest.startDate.toDateString()} has been rejected.`;
-
-    await Notification.create({
-      recipient: leaveRequest.employee._id,
-      sender: rejectedBy,
-      title: "Leave Request Rejected",
-      message: rejectionMessage,
-      type: "leave",
-    });
-
-    res.status(200).json({
-      message: "Leave request rejected successfully",
-      leaveRequest,
-    });
-  } catch (error) {
-    console.error("Reject leave error:", error);
-    res.status(500).json({
-      message: "Failed to reject leave request",
-      error: error.message,
-    });
-  }
-});
-  
 export { router as adminLeaveRoutes };

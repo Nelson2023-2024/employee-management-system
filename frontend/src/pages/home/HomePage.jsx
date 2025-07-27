@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
-import { Users, UserCheck, Calendar, Building2, FileText, TrendingUp, TrendingDown, MoreHorizontal, Check, X } from "lucide-react";
+import { Users, UserCheck, Calendar, Building2, FileText, TrendingUp, TrendingDown, MoreHorizontal, Check, X, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import {
   Table,
@@ -17,8 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Button } from "../../components/ui/button";
+import { useToggleLeave } from '../../hooks/useToggleLeave'; // Import the hook
 
 const HomePage = () => {
+  // Initialize the toggle leave hook
+  const { toggleLeave, isLoading: isToggling } = useToggleLeave();
+
   // Fetch dashboard stats
   const { data: dashboardStats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ["dashboardStats"],
@@ -50,6 +54,11 @@ const HomePage = () => {
       return response.json();
     },
   });
+
+  // Handle approve/reject actions
+  const handleToggleLeave = (leaveId) => {
+    toggleLeave({ leaveId });
+  };
 
   // Helper function to format percentage change
   const formatPercentageChange = (change) => {
@@ -313,26 +322,58 @@ const HomePage = () => {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
+                          <Button 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0"
+                            disabled={isToggling}
+                          >
                             <span className="sr-only">Open menu</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
+                            <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
                           {request.status === 'Pending' && (
                             <>
-                              <DropdownMenuItem className="text-green-600">
+                              <DropdownMenuItem 
+                                className="text-green-600 focus:text-green-600"
+                                onClick={() => handleToggleLeave(request._id)}
+                                disabled={isToggling}
+                              >
                                 <Check className="h-4 w-4 mr-2" />
                                 Approve
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem 
+                                className="text-red-600 focus:text-red-600"
+                                onClick={() => handleToggleLeave(request._id)}
+                                disabled={isToggling}
+                              >
                                 <X className="h-4 w-4 mr-2" />
                                 Reject
                               </DropdownMenuItem>
                             </>
+                          )}
+                          {request.status !== 'Pending' && (
+                            <DropdownMenuItem 
+                              className="text-blue-600 focus:text-blue-600"
+                              onClick={() => handleToggleLeave(request._id)}
+                              disabled={isToggling}
+                            >
+                              {request.status === 'Approved' ? (
+                                <>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Change to Rejected
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Change to Approved
+                                </>
+                              )}
+                            </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
