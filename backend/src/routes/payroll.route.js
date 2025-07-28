@@ -190,7 +190,7 @@ router.post("/generate", async (req, res) => {
     const endDate = new Date(year, month, 0);
 
     // Get all active employees
-    const employees = await User.find({ employeeStatus: "Active" });
+    const employees = await User.find({});
 
     if (employees.length === 0) {
       return res.status(404).json({ message: "No active employees found" });
