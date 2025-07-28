@@ -35,6 +35,11 @@ router.post(
         return res.status(400).json({ message: "All fields are required" });
       }
 
+      // Validate basic salary
+      if (basicSalary < 0) {
+        return res.status(400).json({ message: "Basic salary must be a positive number" });
+      }
+
       if (await User.findOne({ email })) {
         return res.status(400).json({ message: "Email is already taken" });
       }
@@ -52,7 +57,7 @@ router.post(
         position,
         department: department._id,
         password: hashed,
-        basicSalary
+        basicSalary: Number(basicSalary) // Ensure it's stored as a number
       });
 
       // Add to department.employees
@@ -85,6 +90,7 @@ router.post(
           fullName: user.fullName,
           position: user.position,
           department: department.name,
+          basicSalary: user.basicSalary,
           createdAt: user.createdAt,
         },
       });
@@ -143,7 +149,7 @@ router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
 router.get("/", protectRoute, adminRoute, async (req, res) => {
   try {
     const users = await User.find({})
-      .select("-password")
+      .select("-password") // Exclude password but include basicSalary and all other fields
       .populate("department", "name")
       .sort({ createdAt: -1 });
 
@@ -156,4 +162,135 @@ router.get("/", protectRoute, adminRoute, async (req, res) => {
   }
 });
 
+// New route to get a single employee by ID
+router.get("/:id", protectRoute, adminRoute, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id)
+      .select("-password")
+      .populate("department", "name");
+
+    if (!user) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error("Get-employee error:", error.message);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+// Add this route to your existing adminEmployeeRoutes
+
+router.put("/:id", protectRoute, adminRoute, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      email,
+      fullName,
+      phoneNumber,
+      position,
+      departmentName,
+      basicSalary
+    } = req.body;
+
+    // Find the employee
+    const employee = await User.findById(id);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Validate basic salary if provided
+    if (basicSalary !== undefined && basicSalary < 0) {
+      return res.status(400).json({ message: "Basic salary must be a positive number" });
+    }
+
+    // Check if email is already taken by another user
+    if (email && email !== employee.email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: id } });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email is already taken" });
+      }
+    }
+
+    // Handle department change
+    let departmentId = employee.department;
+    if (departmentName && departmentName !== employee.department?.name) {
+      const newDepartment = await Department.findOne({ name: departmentName });
+      if (!newDepartment) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+
+      // Remove employee from old department
+      if (employee.department) {
+        await Department.findByIdAndUpdate(employee.department, {
+          $pull: { employees: employee._id },
+        });
+      }
+
+      // Add employee to new department
+      newDepartment.employees.push(employee._id);
+      await newDepartment.save();
+      
+      departmentId = newDepartment._id;
+    }
+
+    // Update employee data
+    const updateData = {};
+    if (email) updateData.email = email;
+    if (fullName) updateData.fullName = fullName;
+    if (phoneNumber) updateData.phoneNumber = phoneNumber;
+    if (position) updateData.position = position;
+    if (departmentId) updateData.department = departmentId;
+    if (basicSalary !== undefined) updateData.basicSalary = Number(basicSalary);
+
+    const updatedEmployee = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate("department", "name");
+
+    // Create notification for the updated employee
+    await Notification.create({
+      recipient: updatedEmployee._id,
+      sender: null,
+      title: "Profile Updated",
+      message: `Your profile information has been updated by an administrator.`,
+      type: "system",
+    });
+
+    // Create notification for the admin who updated the employee
+    await Notification.create({
+      recipient: req.user._id,
+      sender: updatedEmployee._id,
+      title: "Employee Updated",
+      message: `${updatedEmployee.fullName}'s profile has been updated successfully.`,
+      type: "system",
+    });
+
+    res.status(200).json({
+      message: "Employee updated successfully",
+      employee: {
+        _id: updatedEmployee._id,
+        email: updatedEmployee.email,
+        fullName: updatedEmployee.fullName,
+        phoneNumber: updatedEmployee.phoneNumber,
+        position: updatedEmployee.position,
+        department: updatedEmployee.department,
+        basicSalary: updatedEmployee.basicSalary,
+        employeeStatus: updatedEmployee.employeeStatus,
+        createdAt: updatedEmployee.createdAt,
+        updatedAt: updatedEmployee.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Update-employee error:", error.message);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
 export { router as adminEmployeeRoutes };

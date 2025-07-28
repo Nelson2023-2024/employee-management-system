@@ -98,16 +98,13 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-/**
- * PATCH /admin/leave/toggle-leave/:id
- * Approve or reject a leave request
- */
+// Approve or reject a leave request
 router.patch("/toggle-leave/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const adminId = req.user._id;
 
-    const leaveRequest = await LeaveRequest.findById(id).populate("employee", "fullName");
+    const leaveRequest = await LeaveRequest.findById(id).populate("employee", "fullName email employeeStatus");
     if (!leaveRequest) {
       return res.status(404).json({ message: "Leave request not found" });
     }
@@ -116,29 +113,42 @@ router.patch("/toggle-leave/:id", async (req, res) => {
     const newStatus = leaveRequest.status === "Approved" ? "Rejected" : "Approved";
     const approvedDate = newStatus === "Approved" ? new Date() : null;
 
+    // Update leave request
     const updatedRequest = await LeaveRequest.findByIdAndUpdate(
       id,
       { status: newStatus, approver: adminId, approvedDate },
       { new: true }
     ).populate("employee", "fullName email");
 
-    // Notify the employee about approval/rejection
+    // 👇 Update employee's status accordingly
+    if (newStatus === "Approved") {
+      await User.findByIdAndUpdate(updatedRequest.employee._id, {
+        employeeStatus: "On Leave",
+      });
+    } else if (newStatus === "Rejected") {
+      await User.findByIdAndUpdate(updatedRequest.employee._id, {
+        employeeStatus: "Active", // Optional: revert to Active
+      });
+    }
+
+    // Notify the employee
     await Notification.create({
       recipient: updatedRequest.employee._id,
-      sender:    adminId,
-      title:     `Leave ${newStatus}`,
-      message:   `Your leave request (${updatedRequest.leaveType}) has been ${newStatus.toLowerCase()}.`,
-      type:      "leave",
+      sender: adminId,
+      title: `Leave ${newStatus}`,
+      message: `Your leave request (${updatedRequest.leaveType}) has been ${newStatus.toLowerCase()}.`,
+      type: "leave",
     });
 
     res.status(200).json({
       message: `Leave ${newStatus.toLowerCase()} successfully`,
-      leave:   updatedRequest,
+      leave: updatedRequest,
     });
   } catch (error) {
     console.error("Toggle-leave error:", error.message);
     res.status(500).json({ message: "Failed to toggle leave status", error: error.message });
   }
 });
+
 
 export { router as adminLeaveRoutes };
