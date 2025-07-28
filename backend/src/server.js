@@ -13,6 +13,7 @@ import path from 'path';
 import { adminDashboardRoute } from "./routes/admin.dashboard.route.js";
 import { notificationRoutes } from "./routes/notifications.route.js";
 import { payrollRoutes } from "./routes/payroll.route.js";
+import { employeeDashboardRoute } from "./routes/employeeDashboardRoutes.js";
 configDotenv()
 
 const PORT = process.env.PORT || 5005
@@ -32,6 +33,7 @@ app.use("/api/department", departmentRoutes)
 app.use("/api/admin-mangage-employee", adminEmployeeRoutes)
 app.use("/api/admin-mangage-leave", adminLeaveRoutes)
 app.use("/api/admin-dashboard", adminDashboardRoute)
+app.use("/api/employee-dashboard", employeeDashboardRoute)
 app.use("/api/leave", leaveRoutes)
 app.use("/api/attendance", attendanceRoutes)
 app.use("/api/notifications", notificationRoutes)

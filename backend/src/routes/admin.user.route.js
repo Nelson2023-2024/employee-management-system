@@ -146,7 +146,7 @@ router.delete("/:id", protectRoute, adminRoute, async (req, res) => {
   }
 });
 
-router.get("/", protectRoute, adminRoute, async (req, res) => {
+router.get("/", protectRoute, async (req, res) => {
   try {
     const users = await User.find({})
       .select("-password") // Exclude password but include basicSalary and all other fields
@@ -163,7 +163,7 @@ router.get("/", protectRoute, adminRoute, async (req, res) => {
 });
 
 // New route to get a single employee by ID
-router.get("/:id", protectRoute, adminRoute, async (req, res) => {
+router.get("/:id", protectRoute, async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id)
