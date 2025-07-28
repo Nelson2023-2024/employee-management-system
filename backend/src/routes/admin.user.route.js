@@ -20,7 +20,7 @@ router.post(
         phoneNumber,
         position,
         departmentName,
-        basicSalary
+        basicSalary // Added basicSalary to destructuring
       } = req.body;
 
       if (
@@ -30,13 +30,13 @@ router.post(
         !phoneNumber ||
         !position ||
         !departmentName ||
-        basicSalary === undefined
+        basicSalary === undefined // Check for basicSalary
       ) {
         return res.status(400).json({ message: "All fields are required" });
       }
 
       // Validate basic salary
-      if (basicSalary < 0) {
+      if (isNaN(basicSalary) || parseFloat(basicSalary) < 0) {
         return res.status(400).json({ message: "Basic salary must be a positive number" });
       }
 

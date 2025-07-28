@@ -1,4 +1,3 @@
-// src/pages/employees/EmployeesPage.jsx
 import React, { useState } from "react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -46,19 +45,32 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
     phoneNumber: "",
     position: "",
     departmentName: "",
+    basicSalary: "", // Added basicSalary to form data
   });
+  const [formErrors, setFormErrors] = useState({}); // State for form validation errors
 
   const { createEmployee, isLoading } = useCreateEmployee();
   const { data: departmentsData } = useDepartments();
 
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.email.trim()) errors.email = "Email is required";
+    if (!formData.fullName.trim()) errors.fullName = "Full Name is required";
+    if (!formData.password.trim()) errors.password = "Password is required";
+    if (!formData.phoneNumber.trim()) errors.phoneNumber = "Phone Number is required";
+    if (!formData.position.trim()) errors.position = "Position is required";
+    if (!formData.departmentName.trim()) errors.departmentName = "Department is required";
+    if (formData.basicSalary === "" || isNaN(formData.basicSalary) || parseFloat(formData.basicSalary) < 0) {
+      errors.basicSalary = "Basic Salary must be a positive number";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validate all fields
-    const requiredFields = ['email', 'fullName', 'password', 'phoneNumber', 'position', 'departmentName'];
-    const missingFields = requiredFields.filter(field => !formData[field].trim());
-    
-    if (missingFields.length > 0) {
+    if (!validateForm()) {
       return;
     }
 
@@ -71,7 +83,9 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
           phoneNumber: "",
           position: "",
           departmentName: "",
+          basicSalary: "",
         });
+        setFormErrors({}); // Clear errors on success
         onOpenChange(false);
       },
     });
@@ -83,12 +97,21 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
       ...prev,
       [name]: value
     }));
+    // Clear error for the field being edited
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: undefined
+    }));
   };
 
   const handleDepartmentChange = (value) => {
     setFormData(prev => ({
       ...prev,
       departmentName: value
+    }));
+    setFormErrors(prev => ({
+      ...prev,
+      departmentName: undefined
     }));
   };
 
@@ -114,6 +137,7 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
                 onChange={handleInputChange}
                 required
               />
+              {formErrors.fullName && <p className="text-red-500 text-sm">{formErrors.fullName}</p>}
             </div>
             
             <div className="space-y-2">
@@ -127,6 +151,7 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
                 onChange={handleInputChange}
                 required
               />
+              {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
             </div>
           </div>
 
@@ -141,6 +166,7 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
                 onChange={handleInputChange}
                 required
               />
+              {formErrors.phoneNumber && <p className="text-red-500 text-sm">{formErrors.phoneNumber}</p>}
             </div>
             
             <div className="space-y-2">
@@ -154,6 +180,7 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
                 onChange={handleInputChange}
                 required
               />
+              {formErrors.password && <p className="text-red-500 text-sm">{formErrors.password}</p>}
             </div>
           </div>
 
@@ -168,6 +195,7 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
                 onChange={handleInputChange}
                 required
               />
+              {formErrors.position && <p className="text-red-500 text-sm">{formErrors.position}</p>}
             </div>
             
             <div className="space-y-2">
@@ -184,14 +212,42 @@ const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
                   ))}
                 </SelectContent>
               </Select>
+              {formErrors.departmentName && <p className="text-red-500 text-sm">{formErrors.departmentName}</p>}
             </div>
+          </div>
+
+          {/* New field for Basic Salary */}
+          <div className="space-y-2">
+            <Label htmlFor="basicSalary">Basic Salary</Label>
+            <Input
+              id="basicSalary"
+              name="basicSalary"
+              type="number" // Set type to number for numerical input
+              placeholder="e.g., 50000"
+              value={formData.basicSalary}
+              onChange={handleInputChange}
+              required
+            />
+            {formErrors.basicSalary && <p className="text-red-500 text-sm">{formErrors.basicSalary}</p>}
           </div>
           
           <DialogFooter>
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                setFormErrors({}); // Clear errors when dialog is closed
+                setFormData({ // Reset form data
+                  email: "",
+                  fullName: "",
+                  password: "",
+                  phoneNumber: "",
+                  position: "",
+                  departmentName: "",
+                  basicSalary: "",
+                });
+              }}
               disabled={isLoading}
             >
               Cancel
@@ -436,6 +492,7 @@ const EmployeesPage = () => {
               <TableHead>Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Position</TableHead>
+              <TableHead>Salary</TableHead> {/* Added Salary column */}
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -458,6 +515,7 @@ const EmployeesPage = () => {
                 </TableCell>
                 <TableCell>{employee.department.name}</TableCell>
                 <TableCell>{employee.position}</TableCell>
+                <TableCell>${employee.basicSalary?.toLocaleString()}</TableCell> {/* Display salary */}
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -490,7 +548,7 @@ const EmployeesPage = () => {
             ))}
             {filteredEmployees.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8"> {/* Updated colSpan */}
                   <div className="text-gray-500">
                     {searchTerm || selectedDepartment !== "All" || selectedStatus !== "All" 
                       ? "No employees found matching your criteria." 
