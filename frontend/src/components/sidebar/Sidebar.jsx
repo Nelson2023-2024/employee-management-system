@@ -9,16 +9,18 @@ import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Badge } from "../ui/badge";
 
 // Import icons from Lucide React instead of various sources
-import { 
-  LayoutDashboard, 
-  Users, 
-  CalendarCheck, 
-  DollarSign, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Users,
+  CalendarCheck,
+  DollarSign,
+  Settings,
+  LogOut,
   DoorOpen,
   Bell,
-  HousePlug
+  HousePlug,
+  User, // Added for Profile
+  LineChart, // Added for Employee Dashboard (you might want a different icon)
 } from "lucide-react";
 
 // Import the notification hook
@@ -41,46 +43,82 @@ const Sidebar = () => {
     logout();
   }
 
-  // Navigation items
-  const navItems = [
-    { 
-      icon: LayoutDashboard, 
-      label: "Dashboard", 
-      path: "/", 
-      exact: true 
+  // --- START OF CHANGES ---
+
+  // Define all possible navigation items
+  const allNavItems = [
+     {
+      icon: LayoutDashboard, // You might want a different icon for this
+      label: "Employee Dashboard",
+      path: "/employeedash",
+      // If this dashboard is ONLY for employees, you could add:
+      // showForRoles: ["employee"],
     },
-    { 
-      icon: Users, 
-      label: "Employees", 
-      path: "/employees" 
+    {
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      path: "/",
+      exact: true,
+      // Add a property to control visibility based on role
+      // For example, 'hideForRoles'
+      hideForRoles: ["employee"], // Hide this item if the user's role is 'employee'
     },
-    { 
-      icon: CalendarCheck, 
-      label: "Attendance", 
-      path: "/attendance" 
+    {
+      icon: Users,
+      label: "Employees",
+      path: "/employees",
     },
-    { 
-      icon: DoorOpen, 
-      label: "Leave", 
-      path: "/leave" 
+    {
+      icon: CalendarCheck,
+      label: "Attendance",
+      path: "/attendance",
     },
-    { 
-      icon: HousePlug, 
-      label: "Departments", 
-      path: "/departments" 
+    {
+      icon: DoorOpen,
+      label: "Leave",
+      path: "/leave",
     },
-    { 
-      icon: DollarSign, 
-      label: "Payroll processing", 
+    {
+      icon: HousePlug,
+      label: "Departments",
+      path: "/departments",
+    },
+    {
+      icon: DollarSign,
+      label: "Payroll processing",
       path: "/payroll",
     },
-    { 
-      icon: Bell, 
-      label: "Notifications", 
+    {
+      icon: Bell,
+      label: "Notifications",
       path: "/notifications",
-      badge: unreadCount > 0 ? unreadCount : null
+      badge: unreadCount > 0 ? unreadCount : null,
     },
+    {
+      icon: User,
+      label: "Profile",
+      path: "/profile",
+    },
+   
   ];
+
+  // Filter the navigation items based on the user's role
+  const navItems = allNavItems.filter((item) => {
+    // If authUser data is still loading or not available,
+    // or if the item doesn't specify roles to hide for, show it by default.
+    if (!authUser || !item.hideForRoles) {
+      return true;
+    }
+
+    // Convert authUser.role to lowercase for case-insensitive comparison
+    const userRole = authUser.role.toLowerCase();
+
+    // If the item's 'hideForRoles' array includes the user's role, then hide it.
+    // Otherwise, show it.
+    return !item.hideForRoles.includes(userRole);
+  });
+
+  // --- END OF CHANGES ---
 
   // Function to check if a nav item is active
   const isActive = (item) => {
@@ -111,17 +149,17 @@ const Sidebar = () => {
                     to={item.path}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium relative",
-                      active 
-                        ? "bg-primary text-primary-foreground" 
+                      active
+                        ? "bg-primary text-primary-foreground"
                         : "hover:bg-accent text-foreground hover:text-foreground"
                     )}
                   >
                     <item.icon className="h-5 w-5" />
                     <span className="flex-1">{item.label}</span>
-                    
+
                     {/* Notification Badge */}
                     {item.badge && (
-                      <Badge 
+                      <Badge
                         variant={active ? "secondary" : "destructive"}
                         className="ml-auto text-xs min-w-[1.25rem] h-5 flex items-center justify-center p-0"
                       >

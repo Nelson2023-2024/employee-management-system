@@ -14,6 +14,8 @@ import EmployeesPage from "./pages/employees/EmployeePage";
 import NotificationPage from "./pages/notifications/NotificationPage";
 import DepartmentPage from "./pages/department/DepartmentPage";
 import PayRollPage from "./pages/payroll/PayRollPage";
+import EmployeeDashboard from "./pages/employee-dashboard/EmployeeDashboard";
+import EmploDashboardPage from "./pages/testssd/EmploDashboardPage";
 
 function App() {
   const { data: authUser } = useAuth();
@@ -60,6 +62,14 @@ function App() {
           <Route
             path="/payroll"
             element={authUser ? <PayRollPage /> : <Navigate to="/login" />}
+          />
+           <Route
+            path="/dash"
+            element={authUser ? <EmploDashboardPage /> : <Navigate to="/login" />}
+          />         
+          <Route
+            path="/employeedash"
+            element={authUser ? <EmployeeDashboard /> : <Navigate to="/login" />}
           />
         </Routes>
         <Toaster />
