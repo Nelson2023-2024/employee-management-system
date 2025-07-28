@@ -43,20 +43,18 @@ const Sidebar = () => {
     logout();
   }
 
-  // --- START OF CHANGES ---
-
   // Define all possible navigation items
   const allNavItems = [
      {
-      icon: LayoutDashboard, // You might want a different icon for this
-      label: "Employee Dashboard",
-      path: "/employeedash",
-      // If this dashboard is ONLY for employees, you could add:
-      // showForRoles: ["employee"],
-    },
+       icon: LayoutDashboard, // You might want a different icon for this
+       label: "My Dashboard",
+       path: "/employeedash",
+       // If this dashboard is ONLY for employees, you could add:
+       // showForRoles: ["employee"],
+     },
     {
       icon: LayoutDashboard,
-      label: "Dashboard",
+      label: "Admin Dashboard",
       path: "/",
       exact: true,
       // Add a property to control visibility based on role
@@ -94,12 +92,7 @@ const Sidebar = () => {
       path: "/notifications",
       badge: unreadCount > 0 ? unreadCount : null,
     },
-    {
-      icon: User,
-      label: "Profile",
-      path: "/profile",
-    },
-   
+    
   ];
 
   // Filter the navigation items based on the user's role
@@ -118,8 +111,6 @@ const Sidebar = () => {
     return !item.hideForRoles.includes(userRole);
   });
 
-  // --- END OF CHANGES ---
-
   // Function to check if a nav item is active
   const isActive = (item) => {
     if (item.exact) {
@@ -134,7 +125,9 @@ const Sidebar = () => {
         {/* Logo/Header */}
         <div className="mb-8">
           <Link to="/" className="flex items-center">
-            <h1 className="text-xl font-bold text-primary">AEMS Admin</h1>
+            <h1 className="text-xl font-bold text-primary">
+              AEMS {authUser?.role === "admin" ? "Admin": "Employee"}
+            </h1>
           </Link>
         </div>
 

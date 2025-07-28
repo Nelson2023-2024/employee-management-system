@@ -33,7 +33,7 @@ function App() {
           />
           <Route
             path="/login"
-            element={!authUser ? <LoginPage /> : <Navigate to={"/"} />}
+            element={!authUser ? <LoginPage /> : <Navigate to={"/employeedash"} />}
           />
           <Route
             path="/profile"
