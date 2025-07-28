@@ -31,12 +31,14 @@ export function useGetAllEmployees() {
         throw error;
       }
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
     onError: (error) => {
       toast.error(error.message || "Failed to load employees.");
     },
   });
 
-  return { employees, isLoading, isError, error };
+  return { employees: employees || [], isLoading, isError, error };
 }
 
 // Hook for getting a single employee by ID
@@ -71,6 +73,8 @@ export function useGetEmployee(employeeId) {
       }
     },
     enabled: !!employeeId, // Only run query if employeeId is provided
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
     onError: (error) => {
       toast.error(error.message || "Failed to load employee details.");
     },
@@ -104,15 +108,58 @@ export function useCreateEmployee() {
       return data;
     },
     onSuccess: (payload) => {
+      // Invalidate and refetch employees list
       queryClient.invalidateQueries(["employees"]);
+      queryClient.invalidateQueries(["departments"]); // Also refresh departments as employee count changed
       toast.success(payload.message || "Employee created successfully");
     },
     onError: (error) => {
+      console.error("Create employee error:", error);
       toast.error(error.message || "Could not create employee");
     },
   });
 
   return { createEmployee, isLoading };
+}
+
+// Hook for updating an employee
+export function useUpdateEmployee() {
+  const queryClient = useQueryClient();
+
+  const { mutate: updateEmployee, isLoading } = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const res = await fetch(
+        `http://localhost:5005/api/admin-mangage-employee/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+          credentials: "include",
+        }
+      );
+      
+      const responseData = await res.json();
+      if (!res.ok) {
+        throw new Error(responseData.message || "Failed to update employee");
+      }
+      return responseData;
+    },
+    onSuccess: (payload, { id }) => {
+      // Invalidate multiple queries to ensure data consistency
+      queryClient.invalidateQueries(["employees"]);
+      queryClient.invalidateQueries(["employee", id]); // Refresh specific employee data
+      queryClient.invalidateQueries(["departments"]); // Refresh departments if department changed
+      toast.success(payload.message || "Employee updated successfully");
+    },
+    onError: (error) => {
+      console.error("Update employee error:", error);
+      toast.error(error.message || "Could not update employee");
+    },
+  });
+
+  return { updateEmployee, isLoading };
 }
 
 // Hook for deleting an employee
@@ -138,11 +185,15 @@ export function useDeleteEmployee() {
       }
       return data;
     },
-    onSuccess: (payload) => {
+    onSuccess: (payload, employeeId) => {
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries(["employees"]);
+      queryClient.removeQueries(["employee", employeeId]); // Remove specific employee from cache
+      queryClient.invalidateQueries(["departments"]); // Refresh departments as employee count changed
       toast.success(payload.message || "Employee deleted successfully");
     },
     onError: (error) => {
+      console.error("Delete employee error:", error);
       toast.error(error.message || "Could not delete employee");
     },
   });
@@ -150,41 +201,68 @@ export function useDeleteEmployee() {
   return { deleteEmployee, isLoading };
 }
 
-
-// Hook for updating an employee
-export function useUpdateEmployee() {
+// Optional: Hook for bulk operations (if needed in the future)
+export function useBulkEmployeeOperations() {
   const queryClient = useQueryClient();
 
-  const { mutate: updateEmployee, isLoading } = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const res = await fetch(
-        `http://localhost:5005/api/admin-mangage-employee/${id}`,
-        {
-          method: "PUT", // or "PATCH" depending on your backend implementation
+  const { mutate: bulkUpdateEmployees, isLoading: isBulkUpdating } = useMutation({
+    mutationFn: async ({ employeeIds, updateData }) => {
+      const promises = employeeIds.map(id => 
+        fetch(`http://localhost:5005/api/admin-mangage-employee/${id}`, {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(updateData),
           credentials: "include",
-        }
+        }).then(res => res.json())
       );
       
-      const responseData = await res.json();
-      if (!res.ok) {
-        throw new Error(responseData.message || "Failed to update employee");
-      }
-      return responseData;
+      const results = await Promise.all(promises);
+      return results;
     },
-    onSuccess: (payload) => {
-      // Invalidate multiple queries to ensure data consistency
+    onSuccess: () => {
       queryClient.invalidateQueries(["employees"]);
-      queryClient.invalidateQueries(["employee"]); // This will refresh individual employee queries
-      toast.success(payload.message || "Employee updated successfully");
+      queryClient.invalidateQueries(["departments"]);
+      toast.success("Bulk update completed successfully");
     },
     onError: (error) => {
-      toast.error(error.message || "Could not update employee");
+      console.error("Bulk update error:", error);
+      toast.error("Bulk update failed");
     },
   });
 
-  return { updateEmployee, isLoading };
+  const { mutate: bulkDeleteEmployees, isLoading: isBulkDeleting } = useMutation({
+    mutationFn: async (employeeIds) => {
+      const promises = employeeIds.map(id => 
+        fetch(`http://localhost:5005/api/admin-mangage-employee/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }).then(res => res.json())
+      );
+      
+      const results = await Promise.all(promises);
+      return results;
+    },
+    onSuccess: (_, employeeIds) => {
+      queryClient.invalidateQueries(["employees"]);
+      employeeIds.forEach(id => queryClient.removeQueries(["employee", id]));
+      queryClient.invalidateQueries(["departments"]);
+      toast.success("Selected employees deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Bulk delete error:", error);
+      toast.error("Bulk delete failed");
+    },
+  });
+
+  return {
+    bulkUpdateEmployees,
+    bulkDeleteEmployees,
+    isBulkUpdating,
+    isBulkDeleting,
+  };
 }
