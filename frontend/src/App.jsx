@@ -11,6 +11,7 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import AttendancePage from "./pages/attendance/AttendancePage";
 import LeavePage from "./pages/leave/LeavePage";
 import EmployeesPage from "./pages/employees/EmployeePage";
+import EmployeeDetailsPage from "./pages/employees/EmployeeDetailsPage"; // Import the new component
 import NotificationPage from "./pages/notifications/NotificationPage";
 import DepartmentPage from "./pages/department/DepartmentPage";
 import PayRollPage from "./pages/payroll/PayRollPage";
@@ -50,6 +51,11 @@ function App() {
           <Route
             path="/employees"
             element={authUser ? <EmployeesPage /> : <Navigate to="/login" />}
+          />
+          {/* New route for employee details */}
+          <Route
+            path="/employees/:id"
+            element={authUser ? <EmployeeDetailsPage /> : <Navigate to="/login" />}
           />
           <Route
             path="/notifications"

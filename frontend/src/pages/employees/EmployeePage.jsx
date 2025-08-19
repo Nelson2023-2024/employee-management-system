@@ -1,22 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { Label } from "../../components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -32,390 +17,27 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
-import { ChevronDown, MoreHorizontal, Plus, Loader2, Users, Eye, Edit, Trash2, X } from "lucide-react";
-import { useGetAllEmployees, useCreateEmployee, useDeleteEmployee, useUpdateEmployee, useGetEmployee } from "../../hooks/useEmployees.js";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { ChevronDown, MoreHorizontal, Plus, Loader2, Users, Eye, Edit, Trash2 } from "lucide-react";
+import { useGetAllEmployees, useCreateEmployee } from "../../hooks/useEmployees.js";
 import { useDepartments } from "../../hooks/useDepartments";
 import { useAuth } from "../../hooks/useAuth";
 
-// View Employee Dialog Component
-const ViewEmployeeDialog = ({ employeeId, isOpen, onOpenChange }) => {
-  const { employee, isLoading } = useGetEmployee(employeeId);
-
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Employee Details</DialogTitle>
-          <DialogDescription>
-            View detailed information about the employee.
-          </DialogDescription>
-        </DialogHeader>
-        
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : employee ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-semibold text-lg">
-                {employee.fullName.split(" ").map(n => n[0]).join("").toUpperCase()}
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">{employee.fullName}</h3>
-                <p className="text-sm text-gray-600">{employee.position}</p>
-                <span
-                  className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mt-1 ${
-                    employee.employeeStatus === "Active"
-                      ? "bg-green-100 text-green-800"
-                      : employee.employeeStatus === "On Leave"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {employee.employeeStatus}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Email</Label>
-                <p className="mt-1">{employee.email}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Phone Number</Label>
-                <p className="mt-1">{employee.phoneNumber}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Department</Label>
-                <p className="mt-1">{employee.department?.name}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Basic Salary</Label>
-                <p className="mt-1 font-semibold">${employee.basicSalary?.toLocaleString()}</p>
-              </div>
-              <div className="col-span-2">
-                <Label className="text-sm font-medium text-gray-500">Employee ID</Label>
-                <p className="mt-1 font-mono text-sm">{employee._id}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Joined Date</Label>
-                <p className="mt-1">{new Date(employee.createdAt).toLocaleDateString()}</p>
-              </div>
-              {employee.updatedAt && employee.updatedAt !== employee.createdAt && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Last Updated</Label>
-                  <p className="mt-1">{new Date(employee.updatedAt).toLocaleDateString()}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            Employee not found
-          </div>
-        )}
-        
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-// Edit Employee Dialog Component
-const EditEmployeeDialog = ({ employeeId, isOpen, onOpenChange }) => {
-  const { employee, isLoading: fetchingEmployee } = useGetEmployee(employeeId);
-  const { updateEmployee, isLoading: updating } = useUpdateEmployee();
-  const { data: departmentsData } = useDepartments();
-  
-  const [formData, setFormData] = useState({
-    email: "",
-    fullName: "",
-    phoneNumber: "",
-    position: "",
-    departmentName: "",
-    basicSalary: "",
-  });
-  const [formErrors, setFormErrors] = useState({});
-
-  // Update form data when employee data is loaded
-  React.useEffect(() => {
-    if (employee) {
-      setFormData({
-        email: employee.email || "",
-        fullName: employee.fullName || "",
-        phoneNumber: employee.phoneNumber || "",
-        position: employee.position || "",
-        departmentName: employee.department?.name || "",
-        basicSalary: employee.basicSalary?.toString() || "",
-      });
-    }
-  }, [employee]);
-
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.email.trim()) errors.email = "Email is required";
-    if (!formData.fullName.trim()) errors.fullName = "Full Name is required";
-    if (!formData.phoneNumber.trim()) errors.phoneNumber = "Phone Number is required";
-    if (!formData.position.trim()) errors.position = "Position is required";
-    if (!formData.departmentName.trim()) errors.departmentName = "Department is required";
-    if (formData.basicSalary === "" || isNaN(formData.basicSalary) || parseFloat(formData.basicSalary) < 0) {
-      errors.basicSalary = "Basic Salary must be a positive number";
-    }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    updateEmployee(
-      { id: employeeId, data: { ...formData, basicSalary: Number(formData.basicSalary) } },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-          setFormErrors({});
-        },
-      }
-    );
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    setFormErrors(prev => ({
-      ...prev,
-      [name]: undefined
-    }));
-  };
-
-  const handleDepartmentChange = (value) => {
-    setFormData(prev => ({
-      ...prev,
-      departmentName: value
-    }));
-    setFormErrors(prev => ({
-      ...prev,
-      departmentName: undefined
-    }));
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Edit Employee</DialogTitle>
-          <DialogDescription>
-            Update employee information.
-          </DialogDescription>
-        </DialogHeader>
-        
-        {fetchingEmployee ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : employee ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  placeholder="John Doe"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required
-                />
-                {formErrors.fullName && <p className="text-red-500 text-sm">{formErrors.fullName}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="john.doe@company.com"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-                {formErrors.email && <p className="text-red-500 text-sm">{formErrors.email}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
-                <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  placeholder="+1234567890"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  required
-                />
-                {formErrors.phoneNumber && <p className="text-red-500 text-sm">{formErrors.phoneNumber}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  name="position"
-                  placeholder="Software Engineer"
-                  value={formData.position}
-                  onChange={handleInputChange}
-                  required
-                />
-                {formErrors.position && <p className="text-red-500 text-sm">{formErrors.position}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select value={formData.departmentName} onValueChange={handleDepartmentChange} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departmentsData?.departments?.map((dept) => (
-                      <SelectItem key={dept._id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formErrors.departmentName && <p className="text-red-500 text-sm">{formErrors.departmentName}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="basicSalary">Basic Salary</Label>
-                <Input
-                  id="basicSalary"
-                  name="basicSalary"
-                  type="number"
-                  placeholder="e.g., 50000"
-                  value={formData.basicSalary}
-                  onChange={handleInputChange}
-                  required
-                />
-                {formErrors.basicSalary && <p className="text-red-500 text-sm">{formErrors.basicSalary}</p>}
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  onOpenChange(false);
-                  setFormErrors({});
-                }}
-                disabled={updating}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={updating}>
-                {updating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Update Employee
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            Employee not found
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-// Delete Confirmation Dialog Component
-const DeleteEmployeeDialog = ({ employee, isOpen, onOpenChange }) => {
-  const { deleteEmployee, isLoading } = useDeleteEmployee();
-
-  const handleDelete = () => {
-    deleteEmployee(employee._id, {
-      onSuccess: () => {
-        onOpenChange(false);
-      },
-    });
-  };
-
-  return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Employee</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete <strong>{employee?.fullName}</strong>? 
-            This action cannot be undone and will remove all associated data.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Employee
-              </>
-            )}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-};
-
-// Create Employee Dialog Component
+// Create Employee Dialog Component (kept for adding new employees)
 const CreateEmployeeDialog = ({ isOpen, onOpenChange }) => {
   const [formData, setFormData] = useState({
     email: "",
@@ -730,15 +352,13 @@ const EmployeesTableSkeleton = () => {
 };
 
 const EmployeesPage = () => {
+  const navigate = useNavigate();
   const { employees, isLoading, isError, error } = useGetAllEmployees();
   const { data: authUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [viewEmployeeId, setViewEmployeeId] = useState(null);
-  const [editEmployeeId, setEditEmployeeId] = useState(null);
-  const [deleteEmployee, setDeleteEmployee] = useState(null);
 
   const isAdmin = authUser?.role === "admin";
 
@@ -776,6 +396,14 @@ const EmployeesPage = () => {
     "All",
     ...new Set(employees.map((employee) => employee.employeeStatus)),
   ];
+
+  const handleViewEmployee = (employeeId) => {
+    navigate(`/employees/${employeeId}`);
+  };
+
+  const handleEditEmployee = (employeeId) => {
+    navigate(`/employees/${employeeId}?edit=true`);
+  };
 
   return (
     <div className="p-6">
@@ -921,22 +549,15 @@ const EmployeesPage = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setViewEmployeeId(employee._id)}>
+                      <DropdownMenuItem onClick={() => handleViewEmployee(employee._id)}>
                         <Eye className="mr-2 h-4 w-4" />
-                        View employee
+                        View Details
                       </DropdownMenuItem>
                       {isAdmin && (
                         <>
-                          <DropdownMenuItem onClick={() => setEditEmployeeId(employee._id)}>
+                          <DropdownMenuItem onClick={() => handleEditEmployee(employee._id)}>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit employee
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => setDeleteEmployee(employee)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete employee
+                            Edit Employee
                           </DropdownMenuItem>
                         </>
                       )}
@@ -971,28 +592,10 @@ const EmployeesPage = () => {
         </Table>
       </div>
 
-      {/* Dialogs */}
+      {/* Create Employee Dialog */}
       <CreateEmployeeDialog 
         isOpen={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-      />
-
-      <ViewEmployeeDialog 
-        employeeId={viewEmployeeId}
-        isOpen={!!viewEmployeeId}
-        onOpenChange={(open) => !open && setViewEmployeeId(null)}
-      />
-
-      <EditEmployeeDialog 
-        employeeId={editEmployeeId}
-        isOpen={!!editEmployeeId}
-        onOpenChange={(open) => !open && setEditEmployeeId(null)}
-      />
-
-      <DeleteEmployeeDialog 
-        employee={deleteEmployee}
-        isOpen={!!deleteEmployee}
-        onOpenChange={(open) => !open && setDeleteEmployee(null)}
       />
     </div>
   );
