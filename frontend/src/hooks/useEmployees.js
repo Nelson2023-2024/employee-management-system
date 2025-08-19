@@ -11,7 +11,7 @@ export function useGetAllEmployees() {
     queryKey: ["employees"],
     queryFn: async () => {
       try {
-        const response = await fetch("http://localhost:5005/api/admin-mangage-employee/", {
+        const response = await fetch("/api/admin-mangage-employee/", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export function useGetEmployee(employeeId) {
     queryKey: ["employee", employeeId],
     queryFn: async () => {
       try {
-        const response = await fetch(`http://localhost:5005/api/admin-mangage-employee/${employeeId}`, {
+        const response = await fetch(`/api/admin-mangage-employee/${employeeId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -90,7 +90,7 @@ export function useCreateEmployee() {
   const { mutate: createEmployee, isLoading } = useMutation({
     mutationFn: async (employeeData) => {
       const res = await fetch(
-        "http://localhost:5005/api/admin-mangage-employee/register-employee",
+        "/api/admin-mangage-employee/register-employee",
         {
           method: "POST",
           headers: {
@@ -129,7 +129,7 @@ export function useUpdateEmployee() {
   const { mutate: updateEmployee, isLoading } = useMutation({
     mutationFn: async ({ id, data }) => {
       const res = await fetch(
-        `http://localhost:5005/api/admin-mangage-employee/${id}`,
+        `/api/admin-mangage-employee/${id}`,
         {
           method: "PUT",
           headers: {
@@ -169,7 +169,7 @@ export function useDeleteEmployee() {
   const { mutate: deleteEmployee, isLoading } = useMutation({
     mutationFn: async (employeeId) => {
       const res = await fetch(
-        `http://localhost:5005/api/admin-mangage-employee/${employeeId}`,
+        `/api/admin-mangage-employee/${employeeId}`,
         {
           method: "DELETE",
           headers: {
@@ -208,7 +208,7 @@ export function useBulkEmployeeOperations() {
   const { mutate: bulkUpdateEmployees, isLoading: isBulkUpdating } = useMutation({
     mutationFn: async ({ employeeIds, updateData }) => {
       const promises = employeeIds.map(id => 
-        fetch(`http://localhost:5005/api/admin-mangage-employee/${id}`, {
+        fetch(`/api/admin-mangage-employee/${id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -235,7 +235,7 @@ export function useBulkEmployeeOperations() {
   const { mutate: bulkDeleteEmployees, isLoading: isBulkDeleting } = useMutation({
     mutationFn: async (employeeIds) => {
       const promises = employeeIds.map(id => 
-        fetch(`http://localhost:5005/api/admin-mangage-employee/${id}`, {
+        fetch(`/api/admin-mangage-employee/${id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",

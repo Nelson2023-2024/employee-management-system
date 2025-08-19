@@ -14,7 +14,7 @@ export function useLogin() {
       console.log("Attempting to login with:", { email });
       
       try {
-        const response = await fetch("http://localhost:5005/api/auth/login", {
+        const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

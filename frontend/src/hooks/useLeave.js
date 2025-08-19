@@ -7,7 +7,7 @@ export const useLeaveTypes = () => {
   return useQuery({
     queryKey: ["leaveTypes"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/leave", {
+      const response = await fetch("/api/leave", {
         credentials: "include",
       });
 
@@ -29,7 +29,7 @@ export function useToggleLeave() {
   const { mutate: toggleLeave, isLoading } = useMutation({
     mutationFn: async (leaveTypeId) => {
       const res = await fetch(
-        `http://localhost:5005/api/leave/${leaveTypeId}`,
+        `/api/leave/${leaveTypeId}`,
         {
           method: "POST",
           credentials: "include",
@@ -66,7 +66,7 @@ export const useMyLeaveRequests = () => {
     return useQuery({
       queryKey: ["myLeaves"],
       queryFn: async () => {
-        const response = await fetch("http://localhost:5005/api/leave/my-requests", {
+        const response = await fetch("/api/leave/my-requests", {
           credentials: "include",
         });
   
@@ -88,7 +88,7 @@ export function useCreateLeaveType() {
     const { mutate: createLeaveType, isLoading } = useMutation({
       mutationFn: async (leaveData) => {
         const res = await fetch(
-          "http://localhost:5005/api/admin-mangage-leave",
+          "/api/admin-mangage-leave",
           {
             method: "POST",
             headers: {
@@ -126,7 +126,7 @@ export function useDeleteLeaveType() {
   
     return useMutation({
       mutationFn: async (leaveId) => {
-        const res = await fetch(`http://localhost:5005/api/admin-mangage-leave/${leaveId}`, {
+        const res = await fetch(`/api/admin-mangage-leave/${leaveId}`, {
           method: 'DELETE',
           credentials: 'include',
         });

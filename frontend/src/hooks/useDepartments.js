@@ -67,7 +67,7 @@ export function useDeleteDepartment() {
 
   return useMutation({
     mutationFn: async (departmentId) => {
-      const res = await fetch(`http://localhost:5005/api/department/${departmentId}`, {
+      const res = await fetch(`/api/department/${departmentId}`, {
         method: 'DELETE',
         credentials: 'include',
       });

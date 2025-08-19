@@ -7,7 +7,7 @@ export const useNotifications = () => {
   return useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/notifications", {
+      const response = await fetch("/api/notifications", {
         credentials: "include",
       });
 
@@ -30,7 +30,7 @@ export const useMarkNotificationRead = () => {
   return useMutation({
     mutationFn: async (notificationId) => {
       const response = await fetch(
-        `http://localhost:5005/api/notifications/${notificationId}/read`,
+        `/api/notifications/${notificationId}/read`,
         {
           method: "PATCH",
           credentials: "include",
@@ -61,7 +61,7 @@ export const useMarkAllNotificationsRead = () => {
   return useMutation({
     mutationFn: async () => {
       const response = await fetch(
-        "http://localhost:5005/api/notifications/mark-all-read",
+        "/api/notifications/mark-all-read",
         {
           method: "PATCH",
           credentials: "include",
@@ -93,7 +93,7 @@ export const useSendNotification = () => {
   return useMutation({
     mutationFn: async (notificationData) => {
       const response = await fetch(
-        "http://localhost:5005/api/notifications/send",
+        "/api/notifications/send",
         {
           method: "POST",
           headers: {

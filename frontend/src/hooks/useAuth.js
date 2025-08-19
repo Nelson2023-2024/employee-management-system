@@ -5,7 +5,7 @@ export const useAuth = () => {
   return useQuery({
     queryKey: ["authUser"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/auth/me", {
+      const response = await fetch("/api/auth/me", {
         credentials: "include", // Important!
       });
 

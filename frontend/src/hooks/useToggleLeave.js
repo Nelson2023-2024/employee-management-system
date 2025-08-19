@@ -14,7 +14,7 @@ export function useToggleLeave() {
       console.log("Attempting to toggle leave with ID:", leaveId);
       
       try {
-        const response = await fetch(`http://localhost:5005/api/admin-mangage-leave/toggle-leave/${leaveId}`, {
+        const response = await fetch(`/api/admin-mangage-leave/toggle-leave/${leaveId}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",

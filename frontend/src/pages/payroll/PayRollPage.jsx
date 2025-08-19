@@ -50,7 +50,7 @@ const useCurrentMonthProjection = () => {
   return useQuery({
     queryKey: ['currentMonthProjection'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:5005/api/payroll-processing/current-month-projection', {
+      const response = await fetch('/api/payroll-processing/current-month-projection', {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -74,7 +74,7 @@ const useMyPayrolls = (year, month) => {
       if (year) params.append('year', year);
       if (month) params.append('month', month);
       
-      const response = await fetch(`http://localhost:5005/api/payroll-processing/my-payrolls?${params}`, {
+      const response = await fetch(`/api/payroll-processing/my-payrolls?${params}`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -99,7 +99,7 @@ const useAllPayrolls = (year, month, status) => {
       if (month) params.append('month', month);
       if (status) params.append('status', status);
       
-      const response = await fetch(`http://localhost:5005/api/payroll-processing/all?${params}`, {
+      const response = await fetch(`/api/payroll-processing/all?${params}`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -208,7 +208,7 @@ const GeneratePayrollDialog = ({ onGenerate }) => {
 
     setIsGenerating(true);
     try {
-      const response = await fetch('http://localhost:5005/api/payroll-processing/generate', {
+      const response = await fetch('/api/payroll-processing/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -426,7 +426,7 @@ const PayRollPage = () => {
 
   const handleStatusUpdate = async (payrollId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5005/api/payroll-processing/${payrollId}/status`, {
+      const response = await fetch(`/api/payroll-processing/${payrollId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -448,7 +448,7 @@ const PayRollPage = () => {
       if (selectedYear) params.append('year', selectedYear);
       if (selectedMonth && selectedMonth !== 'all') params.append('month', selectedMonth);
       
-      const response = await fetch(`http://localhost:5005/api/payroll-processing/export?${params}`, {
+      const response = await fetch(`/api/payroll-processing/export?${params}`, {
         credentials: 'include'
       });
       

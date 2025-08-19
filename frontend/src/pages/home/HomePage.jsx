@@ -27,7 +27,7 @@ const HomePage = () => {
   const { data: dashboardStats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/admin-dashboard/dashboard-stats", {
+      const response = await fetch("/api/admin-dashboard/dashboard-stats", {
         credentials: "include",
       });
 
@@ -43,7 +43,7 @@ const HomePage = () => {
   const { data: leaveRequestsData, isLoading: leaveLoading, error: leaveError } = useQuery({
     queryKey: ["leaveRequests"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/admin-mangage-leave/", {
+      const response = await fetch("/api/admin-mangage-leave/", {
         credentials: "include",
       });
 

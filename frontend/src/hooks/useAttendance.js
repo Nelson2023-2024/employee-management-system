@@ -14,7 +14,7 @@ export function useClockIn() {
     error: clockInError,
   } = useMutation({
     mutationFn: async ({ status, clockInTime }) => {
-      const response = await fetch("http://localhost:5005/api/attendance/clock-in", {
+      const response = await fetch("/api/attendance/clock-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -50,7 +50,7 @@ export function useClockOut() {
     error: clockOutError,
   } = useMutation({
     mutationFn: async (clockOutTime) => {
-      const response = await fetch("http://localhost:5005/api/attendance/clock-out", {
+      const response = await fetch("/api/attendance/clock-out", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -86,7 +86,7 @@ export function useMarkAttendance() {
     error: markError,
   } = useMutation({
     mutationFn: async (status) => {
-      const response = await fetch("http://localhost:5005/api/attendance", {
+      const response = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -122,7 +122,7 @@ export function useTodayAttendance() {
     queryKey: ["todayAttendance"],
     queryFn: async () => {
       const response = await fetch(
-        "http://localhost:5005/api/attendance/today",
+        "/api/attendance/today",
         { credentials: "include" }
       );
       const data = await response.json();
@@ -147,7 +147,7 @@ export function useAttendanceHistory() {
     queryKey: ["attendance"],
     queryFn: async () => {
       const response = await fetch(
-        "http://localhost:5005/api/attendance",
+        "/api/attendance",
         { credentials: "include" }
       );
       const data = await response.json();
