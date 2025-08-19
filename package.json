@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npm i --prefix backend && npm i --prefix frontend && npm run build --prefix frontend",
-    "start":"npm run start --prefix backend"
+    "start": "npm run start --prefix backend"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/Nelson2023-2024/employee-management-system/issues"
   },
-  "homepage": "https://github.com/Nelson2023-2024/employee-management-system#readme"
+  "homepage": "https://github.com/Nelson2023-2024/employee-management-system#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }
