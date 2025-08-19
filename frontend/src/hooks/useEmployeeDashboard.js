@@ -6,7 +6,7 @@ export const useEmployeeDashboardStats = () => {
   return useQuery({
     queryKey: ["employeeDashboardStats"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/employee-dashboard/dashboard-stats", {
+      const response = await fetch("/api/employee-dashboard/dashboard-stats", {
         credentials: "include",
       });
 
@@ -29,7 +29,7 @@ export const useEmployeeRecentAttendance = (limit = 10) => {
     queryKey: ["employeeRecentAttendance", limit],
     queryFn: async () => {
       const response = await fetch(
-        `http://localhost:5005/api/employee-dashboard/recent-attendance?limit=${limit}`,
+        `/api/employee-dashboard/recent-attendance?limit=${limit}`,
         {
           credentials: "include",
         }
@@ -52,7 +52,7 @@ export const useEmployeeLeaveHistory = (page = 1, limit = 10) => {
     queryKey: ["employeeLeaveHistory", page, limit],
     queryFn: async () => {
       const response = await fetch(
-        `http://localhost:5005/api/employee-dashboard/leave-history?page=${page}&limit=${limit}`,
+        `/api/employee-dashboard/leave-history?page=${page}&limit=${limit}`,
         {
           credentials: "include",
         }

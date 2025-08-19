@@ -7,7 +7,7 @@ export const useDepartments = () => {
   return useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      const response = await fetch("http://localhost:5005/api/department/", {
+      const response = await fetch("/api/department/", {
         credentials: "include",
       });
 
@@ -29,7 +29,7 @@ export function useCreateDepartment() {
   const { mutate: createDepartment, isLoading } = useMutation({
     mutationFn: async (departmentData) => {
       const res = await fetch(
-        "http://localhost:5005/api/department/create-department",
+        "/api/department/create-department",
         {
           method: "POST",
           headers: {
