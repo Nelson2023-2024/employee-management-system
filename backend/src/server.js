@@ -19,6 +19,7 @@ configDotenv()
 const PORT = process.env.PORT || 5005
 
 const app = express()
+const __dirname = path.resolve()
 app.use(cors({
     origin: "http://localhost:5173",  // your Vite dev server
     credentials: true,                // allow cookies/auth headers
@@ -43,6 +44,14 @@ app.use(
   '/exports',
   express.static(path.join(process.cwd(), 'exports'))
 );
+
+if(process.env.NODE_ENV =="production"){
+  app.use(express.static(path.join(__dirname, "../frontend/dist")))
+
+  app.get("*", (req,res) =>{
+    res.sendFile(path.join(__dirname,"../frontend", "dist", "index.html"))
+  })
+}
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     connectToDB()

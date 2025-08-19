@@ -4,7 +4,7 @@ import "./App.css";
 import { Navigate, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/home/HomePage";
 import LoginPage from "./pages/login/LoginPage";
-import Sidebar from "./components/sidebar/SideBar";
+import Sidebar from "./components/sidebar/Sidebar";
 import { useAuth } from "./hooks/useAuth";
 import { Toaster } from "react-hot-toast";
 import ProfilePage from "./pages/profile/ProfilePage";
